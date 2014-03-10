@@ -22,4 +22,7 @@ test:
 	mvn test
 
 wc:
-	find src/main/java/org/schwa/dr -name '*.java' | xargs wc -l
+	for d in src/main src/test; do \
+		echo $${d}; \
+		find $${d} -name '*.java' | sort | xargs wc -l; \
+	done
