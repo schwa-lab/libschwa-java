@@ -4,22 +4,26 @@ import org.schwa.dr.FieldSchema;
 
 
 public final class RTFieldSchema {
-  private int fieldId;
-  private String serial;
   private RTStoreSchema containingStore;
-  private boolean isSlice;
   private FieldSchema def;
+  private String serial;
+  private final int fieldId;
+  private final boolean isCollection;
+  private final boolean isSelfPointer;
+  private final boolean isSlice;
 
-  public RTFieldSchema(int fieldId, String serial, RTStoreSchema containingStore, boolean isSlice) {
-    this(fieldId, serial, containingStore, isSlice, null);
+  public RTFieldSchema(int fieldId, String serial, RTStoreSchema containingStore, boolean isCollection, boolean isSelfPointer, boolean isSlice) {
+    this(fieldId, serial, containingStore, isCollection, isSelfPointer, isSlice, null);
   }
 
-  public RTFieldSchema(int fieldId, String serial, RTStoreSchema containingStore, boolean isSlice, FieldSchema def) {
-    this.fieldId = fieldId;
-    this.serial = serial;
+  public RTFieldSchema(int fieldId, String serial, RTStoreSchema containingStore, boolean isCollection, boolean isSelfPointer, boolean isSlice, FieldSchema def) {
     this.containingStore = containingStore;
-    this.isSlice = isSlice;
     this.def = def;
+    this.serial = serial;
+    this.fieldId = fieldId;
+    this.isCollection = isCollection;
+    this.isSelfPointer = isSelfPointer;
+    this.isSlice = isSlice;
   }
 
   public RTStoreSchema getContainingStore() {
@@ -38,12 +42,20 @@ public final class RTFieldSchema {
     return serial;
   }
 
+  public boolean isCollection() {
+    return isCollection;
+  }
+
   public boolean isLazy() {
     return def == null;
   }
 
   public boolean isPointer() {
     return containingStore != null;
+  }
+
+  public boolean isSelfPointer() {
+    return isSelfPointer;
   }
 
   public boolean isSlice() {

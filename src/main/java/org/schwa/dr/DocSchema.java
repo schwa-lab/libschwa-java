@@ -123,6 +123,12 @@ public class DocSchema extends AnnSchema {
     }
   }
 
+  private static void ensureNoOtherAnnotations(final Field field, final Class<?> knownAnnotationKlass) {
+    for (Class<? extends Annotation> klass : ANNOTATION_KLASSES)
+      if (klass != knownAnnotationKlass && field.getAnnotation(klass) != null)
+        throw new IllegalAnnotationException("Field '" + field + "' cannot have more than one docrep annotation.");
+  }
+
   private static void validateFieldField(final Field field, final dr.Field drField, final AnnSchema annSchema) {
     // dr.Field can annotate:
     // * {byte,char,short,int,long,float,double,boolean,String}
@@ -204,12 +210,6 @@ public class DocSchema extends AnnSchema {
     else
       throw new IllegalAnnotationException("Field '" + field + "' which is annotated with dr.Pointer is of an invalid type");
     annSchema.addField(fieldSchema);
-  }
-
-  private static void ensureNoOtherAnnotations(final Field field, final Class<?> knownAnnotationKlass) {
-    for (Class<? extends Annotation> klass : ANNOTATION_KLASSES)
-      if (klass != knownAnnotationKlass && field.getAnnotation(klass) != null)
-        throw new IllegalAnnotationException("Field '" + field + "' cannot have more than one docrep annotation.");
   }
 
   public static <T extends Doc> DocSchema create(final Class<T> klass) {

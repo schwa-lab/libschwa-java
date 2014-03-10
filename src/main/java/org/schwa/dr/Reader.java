@@ -171,7 +171,7 @@ public final class Reader <T extends Doc> implements Iterable<T>, Iterator<T> {
         // See if the read in field exists on the registered class's schema.
         RTFieldSchema rtFieldSchema;
         if (rtAnnSchema.isLazy())
-          rtFieldSchema = new RTFieldSchema(f, fieldName, null, isSlice);
+          rtFieldSchema = new RTFieldSchema(f, fieldName, null, isCollection, isSelfPointer, isSlice);
         else {
           // Try and find the field on the registered class.
           FieldSchema fieldDef = null;
@@ -181,7 +181,7 @@ public final class Reader <T extends Doc> implements Iterable<T>, Iterator<T> {
               break;
             }
           }
-          rtFieldSchema = new RTFieldSchema(f, fieldName, null, isSlice, fieldDef);
+          rtFieldSchema = new RTFieldSchema(f, fieldName, null, isCollection, isSelfPointer, isSlice, fieldDef);
 
           // Perform some sanity checks that the type of data on the stream is what we're expecting.
           if (fieldDef != null) {
@@ -322,7 +322,7 @@ public final class Reader <T extends Doc> implements Iterable<T>, Iterator<T> {
           lazyNElem++;
         }
         else
-          ReaderHelper.read(field, doc, doc, unpacker);
+          ReaderHelper.read(field, doc, doc, null, unpacker);
       }  // for each field.
       unpacker.readMapEnd();
 
@@ -380,7 +380,7 @@ public final class Reader <T extends Doc> implements Iterable<T>, Iterator<T> {
             lazyNElem++;
           }
           else
-            ReaderHelper.read(field, ann, doc, unpacker);
+            ReaderHelper.read(field, ann, doc, store, unpacker);
         }  // for each field.
         unpacker.readMapEnd();
 
