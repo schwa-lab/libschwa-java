@@ -12,7 +12,6 @@ import org.schwa.dr.Ann;
 import org.schwa.dr.AnnSchema;
 import org.schwa.dr.DocSchema;
 import org.schwa.dr.FieldSchema;
-import org.schwa.dr.FieldType;
 import org.schwa.dr.StoreSchema;
 
 
@@ -38,7 +37,7 @@ public final class RTFactory {
   public static RTManager merge(final RTManager rt, final DocSchema docSchema) {
     final RTAnnSchema rtDocSchema = rt.getDocSchema();
 
-    // discover existing klasses
+    // Discover existing klasses.
     int klassId = 0;
     Map<String, RTAnnSchema> knownKlasses = new HashMap<String, RTAnnSchema>();
     if (!rt.getSchemas().isEmpty()) {
@@ -51,7 +50,7 @@ public final class RTFactory {
       klassId++;
     }
 
-    // discover existing stores
+    // Discover existing stores.
     int storeId = 0;
     Map<String, RTStoreSchema> knownStores = new HashMap<String, RTStoreSchema>();
     if (!rtDocSchema.getStores().isEmpty()) {
@@ -64,7 +63,7 @@ public final class RTFactory {
       storeId++;
     }
 
-    // construct the new RTStoreSchema's
+    // Construct the new RTStoreSchema's.
     for (StoreSchema store : docSchema.getStores()) {
       RTStoreSchema rtStore = knownStores.get(store.getName());
       if (rtStore == null) {
@@ -88,10 +87,10 @@ public final class RTFactory {
         throw new AssertionError();
     }
 
-    // construct the documents RTFieldSchema's
+    // Construct the documents RTFieldSchema's.
     mergeFields(rtDocSchema, docSchema, knownStores);
 
-    // construct each of the klasses
+    // Construct each of the klasses.
     Map<Class<? extends Ann>, RTAnnSchema> annKlassToRTAnn = new HashMap<Class<? extends Ann>, RTAnnSchema>();
     for (AnnSchema ann : docSchema.getSchemas()) {
       RTAnnSchema rtAnn = knownKlasses.get(ann.getName());
@@ -118,7 +117,7 @@ public final class RTFactory {
         throw new AssertionError();
     }
 
-    // back-fill the RTStoreDef's RTAnnSchema pointers now that they exist
+    // Back-fill the RTStoreDef's RTAnnSchema pointers now that they exist.
     for (StoreSchema store : docSchema.getStores()) {
       RTStoreSchema rtStore = knownStores.get(store.getName());
       if (rtStore.getStoredKlass() == null)
@@ -129,7 +128,7 @@ public final class RTFactory {
   }
 
   private static void mergeFields(final RTAnnSchema rtSchema, final AnnSchema schema, final Map<String, RTStoreSchema> knownStores) {
-    // discover existing fields
+    // Discover existing fields.
     int fieldId = 0;
     Map<String, RTFieldSchema> knownFields = new HashMap<String, RTFieldSchema>();
     if (!rtSchema.getFields().isEmpty()) {
@@ -142,15 +141,14 @@ public final class RTFactory {
       fieldId++;
     }
 
-    // construct the new RTFieldSchemas
+    // Construct the new RTFieldSchemas.
     for (FieldSchema field : schema.getFields()) {
       RTFieldSchema rtField = knownFields.get(field.getName());
       if (rtField == null) {
-        final boolean isSlice = field.isSlice();
         RTStoreSchema rtStore = null;
         if (field.isPointer())
           rtStore = knownStores.get(field.getStoreName());
-        rtField = new RTFieldSchema(fieldId, field.getSerial(), rtStore, isSlice, field);
+        rtField = new RTFieldSchema(fieldId, field.getSerial(), rtStore, field.isCollection(), field.isSelfPointer(), field.isSlice(), field);
         rtSchema.addField(rtField);
         fieldId++;
       }
