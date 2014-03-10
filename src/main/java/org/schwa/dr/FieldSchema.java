@@ -4,29 +4,35 @@ import java.lang.reflect.Field;
 
 
 public final class FieldSchema {
-  private final FieldType fieldType;
   private final Field field;
   private final String name;
   private final Class<? extends Ann> pointedToKlass;
   private final String storeName;
+
+  private final boolean isPointer;
+  private final boolean isSelfPointer;
+  private final boolean isSlice;
+  private final boolean isCollection;
+
   private String serial;
 
-  private FieldSchema(FieldType fieldType, Field field, String name, String serial, Class<? extends Ann> pointedToKlass, String storeName) {
-    this.fieldType = fieldType;
+  private FieldSchema(Field field, String name, String serial, Class<? extends Ann> pointedToKlass, String storeName, boolean isPointer, boolean isSelfPointer, boolean isSlice, boolean isCollection) {
     this.field = field;
     this.name = name;
     this.pointedToKlass = pointedToKlass;
     this.storeName = storeName;
+
+    this.isPointer = isPointer;
+    this.isSelfPointer = isSelfPointer;
+    this.isSlice = isSlice;
+    this.isCollection = isCollection;
+
     serial = serial.trim();
     this.serial = serial.isEmpty() ? name : serial;
   }
 
   public Field getField() {
     return field;
-  }
-
-  public FieldType getFieldType() {
-    return fieldType;
   }
 
   public Object getFieldValue(Ann ann) {
@@ -54,12 +60,20 @@ public final class FieldSchema {
     return storeName;
   }
 
+  public boolean isCollection() {
+    return isCollection;
+  }
+
   public boolean isPointer() {
-    return fieldType == FieldType.POINTER || fieldType == FieldType.POINTERS || fieldType == FieldType.SLICE;
+    return isPointer;
+  }
+
+  public boolean isSelfPointer() {
+    return isSelfPointer;
   }
 
   public boolean isSlice() {
-    return fieldType == FieldType.BYTE_SLICE || fieldType == FieldType.SLICE;
+    return isSlice;
   }
 
   public void setSerial(String serial) {
@@ -67,22 +81,34 @@ public final class FieldSchema {
   }
 
   public static FieldSchema createByteSlice(Field field, dr.Field drField) {
-    return new FieldSchema(FieldType.BYTE_SLICE, field, field.getName(), drField.serial(), null, null);
+    return new FieldSchema(field, field.getName(), drField.serial(), null, null, false, false, false, false);
   }
 
   public static FieldSchema createPointer(Field field, dr.Pointer drPointer, Class<? extends Ann> pointedToKlass) {
-    return new FieldSchema(FieldType.POINTER, field, field.getName(), drPointer.serial(), pointedToKlass, drPointer.store());
+    return new FieldSchema(field, field.getName(), drPointer.serial(), pointedToKlass, drPointer.store(), true, false, false, false);
+  }
+
+  public static FieldSchema createPointerSlice(Field field, dr.Pointer drPointer, Class<? extends Ann> pointedToKlass) {
+    return new FieldSchema(field, field.getName(), drPointer.serial(), pointedToKlass, drPointer.store(), true, false, true, false);
   }
 
   public static FieldSchema createPointers(Field field, dr.Pointer drPointer, Class<? extends Ann> pointedToKlass) {
-    return new FieldSchema(FieldType.POINTERS, field, field.getName(), drPointer.serial(), pointedToKlass, drPointer.store());
+    return new FieldSchema(field, field.getName(), drPointer.serial(), pointedToKlass, drPointer.store(), true, false, false, true);
   }
 
   public static FieldSchema createPrimitive(Field field, dr.Field drField) {
-    return new FieldSchema(FieldType.PRIMITIVE, field, field.getName(), drField.serial(), null, null);
+    return new FieldSchema(field, field.getName(), drField.serial(), null, null, false, false, false, false);
   }
 
-  public static FieldSchema createSlice(Field field, dr.Pointer drPointer, Class<? extends Ann> pointedToKlass) {
-    return new FieldSchema(FieldType.SLICE, field, field.getName(), drPointer.serial(), pointedToKlass, drPointer.store());
+  public static FieldSchema createSelfPointer(Field field, dr.SelfPointer drSelfPointer, Class<? extends Ann> pointedToKlass) {
+    return new FieldSchema(field, field.getName(), drSelfPointer.serial(), pointedToKlass, "", true, true, false, false);
+  }
+
+  public static FieldSchema createSelfPointerSlice(Field field, dr.SelfPointer drSelfPointer, Class<? extends Ann> pointedToKlass) {
+    return new FieldSchema(field, field.getName(), drSelfPointer.serial(), pointedToKlass, "", true, true, true, false);
+  }
+
+  public static FieldSchema createSelfPointers(Field field, dr.SelfPointer drSelfPointer, Class<? extends Ann> pointedToKlass) {
+    return new FieldSchema(field, field.getName(), drSelfPointer.serial(), pointedToKlass, "", true, true, false, true);
   }
 }

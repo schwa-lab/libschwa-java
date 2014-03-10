@@ -61,6 +61,10 @@ public final class RTAnnSchema {
     return stores;
   }
 
+  public boolean hasFields() {
+    return !fields.isEmpty();
+  }
+
   public boolean isLazy() {
     return def == null;
   }

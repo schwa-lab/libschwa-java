@@ -102,7 +102,7 @@ public final class Reader <T extends Doc> implements Iterable<T>, Iterator<T> {
       klassNameMap.put(ann.getSerial(), ann);
 
     // Keep track of the temporary mapping of pointer field to the store_id that they point to.
-    Map<RTFieldSchema, int> rtFieldSchemaToStoreIds = new HashMap<RTFieldSchema, Integer>();
+    Map<RTFieldSchema, Integer> rtFieldSchemaToStoreIds = new HashMap<RTFieldSchema, Integer>();
 
     // Keep track of the klass_id of __meta__.
     Integer klassIdMeta = null;
@@ -286,10 +286,25 @@ public final class Reader <T extends Doc> implements Iterable<T>, Iterator<T> {
 
     // Read the document instance.
     // <doc_instance> ::= <instances_nbytes> <instance>
-    {
-      final long nbytes = unpacker.readLong();
+    do {
+      final long _instancesNBytes = unpacker.readLong();
+      if (_instancesNBytes > Integer.MAX_VALUE)
+        throw new ReaderException("<instances_nbytes> is too large for Java (" + _instancesNBytes + ")");
+      final int instancesNBytes = (int) _instancesNBytes;
 
-      final ByteArrayOutputStream lazyBOS = new ByteArrayOutputStream();
+      // Read all of the doc's fields lazily, if required.
+      if (!docSchema.hasFields()) {
+        byte[] lazyBytes = new byte[instancesNBytes];
+        final int nbytesRead = in.read(lazyBytes);
+        if (nbytesRead != instancesNBytes)
+          throw new ReaderException("Failed to read in " + instancesNBytes + " from the input stream");
+
+        // Attach the lazy fields to the doc.
+        // TODO
+        break;
+      }
+
+      final ByteArrayOutputStream lazyBOS = new ByteArrayOutputStream(instancesNBytes);
       final Packer lazyPacker = msgpack.createPacker(lazyBOS);
       int lazyNElem = 0;
 
@@ -308,69 +323,76 @@ public final class Reader <T extends Doc> implements Iterable<T>, Iterator<T> {
         }
         else
           ReaderHelper.read(field, doc, doc, unpacker);
-      }
+      }  // for each field.
       unpacker.readMapEnd();
 
+      // Store the lazy slab on the doc if it was used.
       if (lazyNElem != 0) {
         lazyPacker.flush();
         doc.setDRLazy(lazyBOS.toByteArray());
         doc.setDRLazyNElem(lazyNElem);
       }
-    }
+    } while (false);
 
 
-    // read the store instances
+    // Read the store instances.
     // <instances_groups> ::= <instances_group>*
     for (RTStoreSchema rtStoreSchema : rtDocSchema.getStores()) {
       // <instances_group>  ::= <instances_nbytes> <instances>
-      final long nbytes = unpacker.readLong();
+      final long _instancesNBytes = unpacker.readLong();
+      if (_instancesNBytes > Integer.MAX_VALUE)
+        throw new ReaderException("<instances_nbytes> is too large for Java (" + _instancesNBytes + ")");
+      final int instancesNBytes = (int) _instancesNBytes;
+
+      // Read the store lazily, if required.
+      if (rtStoreSchema.isLazy()) {
+        byte[] lazyBytes = new byte[instancesNBytes];
+        final int nbytesRead = in.read(lazyBytes);
+        if (nbytesRead != instancesNBytes)
+          throw new ReaderException("Failed to read in " + instancesNBytes + " from the input stream");
+
+        rtStoreSchema.setLazy(lazyBytes);
+        continue;
+      }
+
+      final RTAnnSchema storedKlass = rtStoreSchema.getStoredKlass();
+      final Store<? extends Ann> store = rtStoreSchema.getDef().getStore(doc);
 
       // <instances> ::= [ <instance> ]
-      if (rtStoreSchema.isLazy()) {
-        final ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        final Packer packer = msgpack.createPacker(bos);
-        final Value value = unpacker.readValue();
-        value.writeTo(packer);
-        packer.flush();
-        rtStoreSchema.setLazy(bos.toByteArray());
-      }
-      else {
-        final RTAnnSchema storedKlass = rtStoreSchema.getStoredKlass();
-        final Store<? extends Ann> store = rtStoreSchema.getDef().getStore(doc);
+      final int ninstances = unpacker.readArrayBegin();
+      for (int o = 0; o != ninstances; o++) {
+        final Ann ann = store.get(o);
+        final ByteArrayOutputStream lazyBOS = new ByteArrayOutputStream();
+        final Packer lazyPacker = msgpack.createPacker(lazyBOS);
+        int lazyNElem = 0;
 
-        final int nobjects = unpacker.readArrayBegin();
-        for (int o = 0; o != nobjects; o++) {
-          final Ann ann = store.get(o);
-          final ByteArrayOutputStream lazyBOS = new ByteArrayOutputStream();
-          final Packer lazyPacker = msgpack.createPacker(lazyBOS);
-          int lazyNElem = 0;
+        // <instance> ::= { <field_id> : <obj_val> }
+        final int nitems = unpacker.readMapBegin();
+        for (int i = 0; i != nitems; i++) {
+          final int key = unpacker.readInt();
+          final RTFieldSchema field = storedKlass.getField(key);
 
-          // <instance> ::= { <field_id> : <obj_val> }
-          final int nitems = unpacker.readMapBegin();
-          for (int i = 0; i != nitems; i++) {
-            final int key = unpacker.readInt();
-            final RTFieldSchema field = storedKlass.getField(key);
-
-            // deserialize the field value if required
-            if (field.isLazy()) {
-              final Value lazyValue = unpacker.readValue();
-              lazyPacker.write(key);
-              lazyValue.writeTo(lazyPacker);
-              lazyNElem++;
-            }
-            else
-              ReaderHelper.read(field, ann, doc, unpacker);
+          // Deserialize the field value, if required.
+          if (field.isLazy()) {
+            final Value lazyValue = unpacker.readValue();
+            lazyPacker.write(key);
+            lazyValue.writeTo(lazyPacker);
+            lazyNElem++;
           }
-          unpacker.readMapEnd();
+          else
+            ReaderHelper.read(field, ann, doc, unpacker);
+        }  // for each field.
+        unpacker.readMapEnd();
 
-          if (lazyNElem != 0) {
-            lazyPacker.flush();
-            ann.setDRLazy(lazyBOS.toByteArray());
-            ann.setDRLazyNElem(lazyNElem);
-          }
+        // If there were any lazy fields on the Ann instance, store them on the instance.
+        if (lazyNElem != 0) {
+          lazyPacker.flush();
+          ann.setDRLazy(lazyBOS.toByteArray());
+          ann.setDRLazyNElem(lazyNElem);
         }
-        unpacker.readArrayEnd();
-      }
-    }
+      }  // for each instance
+
+      unpacker.readArrayEnd();
+    }  // for each instance group
   }
 }

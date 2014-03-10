@@ -17,7 +17,7 @@ public final class dr {
   /**
    * {@link dr.Doc} can annotate public classes of the form:
    * <ul>
-   * <li>Any subclass of {@link Doc}</li>
+   * <li>Any implementation of {@link Doc}</li>
    * </ul>
    */
   @Retention(RetentionPolicy.RUNTIME)
@@ -28,7 +28,7 @@ public final class dr {
   /**
    * {@link dr.Ann} can annotate public classes of the form:
    * <ul>
-   * <li>Any subclass of {@link Ann}</li>
+   * <li>Any implementation of {@link Ann}</li>
    * </ul>
    */
   @Retention(RetentionPolicy.RUNTIME)
@@ -66,14 +66,28 @@ public final class dr {
    * {@link dr.Pointer} can annotate public member fields of the form:
    * <ul>
    * <li>{@link Slice}</li>
-   * <li>Any object which is a subclass of {@link Ann}</li>
-   * <li>A {@link java.util.List} of subclasses of {@link Ann}</li>
+   * <li>Any object which is a implementation of {@link Ann}</li>
+   * <li>A {@link java.util.List} of implementation of {@link Ann}</li>
    * </ul>
    */
   @Retention(RetentionPolicy.RUNTIME)
   @Target({ElementType.FIELD})
   public @interface Pointer {
     String store();
+    String serial() default "";
+  }
+
+  /**
+   * {@link dr.SelfPointer} can annotate public member fields of the form:
+   * <ul>
+   * <li>{@link Slice}</li>
+   * <li>Any object which is a implementation of {@link Ann}</li>
+   * <li>A {@link java.util.List} of implementation of {@link Ann}</li>
+   * </ul>
+   */
+  @Retention(RetentionPolicy.RUNTIME)
+  @Target({ElementType.FIELD})
+  public @interface SelfPointer {
     String serial() default "";
   }
 }

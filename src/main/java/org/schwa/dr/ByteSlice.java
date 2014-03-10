@@ -6,6 +6,7 @@ public class ByteSlice {
   public long stop;
 
   public ByteSlice() { }
+
   public ByteSlice(long start, long stop) {
     this.start = start;
     this.stop = stop;

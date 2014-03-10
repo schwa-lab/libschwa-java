@@ -1,11 +1,12 @@
 package org.schwa.dr;
 
 
-public class Slice <T extends Ann> {
+public class Slice<T extends Ann> {
   public T start;
   public T stop;
 
   public Slice() { }
+
   public Slice(T start, T stop) {
     this.start = start;
     this.stop = stop;

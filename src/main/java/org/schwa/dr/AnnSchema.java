@@ -21,7 +21,7 @@ public class AnnSchema {
     this.fieldSchemas = new ArrayList<FieldSchema>();
   }
 
-  public void addField(final FieldSchema fieldSchema) {
+  public void addField(FieldSchema fieldSchema) {
     fieldSchemas.add(fieldSchema);
   }
 
@@ -50,6 +50,10 @@ public class AnnSchema {
 
   public String getSerial() {
     return serial;
+  }
+
+  public boolean hasFields() {
+    return !fieldSchemas.isEmpty();
   }
 
   public void setSerial(String serial) {
