@@ -134,7 +134,7 @@ public final class Reader <T extends Doc> implements Iterable<T>, Iterator<T> {
       final int nfields = unpacker.readArrayBegin();
       for (int f = 0; f != nfields; f++) {
         String fieldName = null;
-        int storeId = 0;
+        int storeId = -1;
         boolean isPointer = false, isSelfPointer = false, isSlice = false, isCollection = false;
 
         // <field> ::= { <field_type> : <field_val> }
@@ -146,7 +146,7 @@ public final class Reader <T extends Doc> implements Iterable<T>, Iterator<T> {
             fieldName = unpacker.readString();
             break;
           case 1:  // POINTER_TO
-            storeId = unpacker.readInt() + 1;
+            storeId = unpacker.readInt();
             isPointer = true;
             break;
           case 2:  // IS_SLICE
@@ -163,7 +163,7 @@ public final class Reader <T extends Doc> implements Iterable<T>, Iterator<T> {
           default:
             throw new ReaderException("Unknown value " + ((int) key) +  " as key in <field> map");
           }
-        }
+        }  // for each field.
         unpacker.readMapEnd();
         if (fieldName == null)
           throw new ReaderException("Field number " + (f + 1) + " did not contain a NAME key");
@@ -220,7 +220,7 @@ public final class Reader <T extends Doc> implements Iterable<T>, Iterator<T> {
         throw new ReaderException("Invalid sized tuple read in: expected 3 elements but found " + ntriple);
       final String storeName = unpacker.readString();
       final int klassId = unpacker.readInt();
-      final int nelem = unpacker.readInt();
+      final int nElem = unpacker.readInt();
       unpacker.readArrayEnd();
 
       // Sanity check on the value of the klassId.
@@ -239,7 +239,7 @@ public final class Reader <T extends Doc> implements Iterable<T>, Iterator<T> {
       final RTAnnSchema klass = rt.getSchema(klassId);
       RTStoreSchema rtStoreSchema;
       if (def == null)
-        rtStoreSchema = new RTStoreSchema(n, storeName, klass, null, nelem);
+        rtStoreSchema = new RTStoreSchema(n, storeName, klass, null, nElem);
       else
         rtStoreSchema = new RTStoreSchema(n, storeName, klass, def);
       rtDocSchema.addStore(rtStoreSchema);
@@ -252,7 +252,7 @@ public final class Reader <T extends Doc> implements Iterable<T>, Iterator<T> {
           throw new ReaderException("Store '" + storeName + "' points to " + storeKlass + " but the stream says it points to " + klassKlass);
 
         // Resize the store to house the correct number of instances.
-        def.resize(nelem, doc);
+        def.resize(nElem, doc);
       }
     }  // for each store.
     unpacker.readArrayEnd();
@@ -274,7 +274,7 @@ public final class Reader <T extends Doc> implements Iterable<T>, Iterator<T> {
         if (!rtField.isLazy()) {
           final Class<?> pointedToKlass = rtField.getDef().getPointedToKlass();
           final Class<?> storedKlass = rtStore.getDef().getStoredKlass();
-          if (!pointedToKlass.equals(storedKlass))
+          if (pointedToKlass != storedKlass)
             throw new ReaderException("Field points to " + pointedToKlass + " but the containing Store stores " + storedKlass);
         }
 

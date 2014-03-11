@@ -35,8 +35,13 @@ final class ReaderHelper {
       else
         readPointer(field, ann, store, unpacker);
     }
-    else
-      readPrimitive(field, ann, unpacker);
+    else {
+      final Class<?> klass = fieldSchema.getField().getType();
+      if (klass == ByteSlice.class)
+        readByteSlice(field, ann, unpacker);
+      else
+        readPrimitive(field, ann, klass, unpacker);
+    }
   }
 
 
@@ -75,7 +80,7 @@ final class ReaderHelper {
       field.set(ann, slice);
     }
     slice.start = store.get(a);
-    slice.stop = store.get(a + b);
+    slice.stop = store.get(a + b - 1);  // Pointer slices in Java have to be [inclusive, inclusive].
     unpacker.readArrayEnd();
   }
 
@@ -92,45 +97,44 @@ final class ReaderHelper {
   }
 
 
-  private static void readPrimitive(final Field field, final Ann ann, final Unpacker unpacker) throws IOException, IllegalAccessException {
-    final Class<?> type = field.getType();
-    if (type.equals(String.class)) {
+  private static void readPrimitive(final Field field, final Ann ann, final Class<?> klass, final Unpacker unpacker) throws IOException, IllegalAccessException {
+    if (klass == String.class) {
       final String value = unpacker.readString();
       field.set(ann, value);
     }
-    else if (type.equals(byte.class) || type.equals(Byte.class)) {
+    else if (klass == byte.class || klass == Byte.class) {
       final byte value = unpacker.readByte();
       field.set(ann, value);
     }
-    else if (type.equals(char.class) || type.equals(Character.class)) {
+    else if (klass == char.class || klass == Character.class) {
       final char value = (char) unpacker.readInt();
       field.set(ann, value);
     }
-    else if (type.equals(short.class) || type.equals(Short.class)) {
+    else if (klass == short.class || klass == Short.class) {
       final short value = unpacker.readShort();
       field.set(ann, value);
     }
-    else if (type.equals(int.class) || type.equals(Integer.class)) {
+    else if (klass == int.class || klass == Integer.class) {
       final int value = unpacker.readInt();
       field.set(ann, value);
     }
-    else if (type.equals(long.class) || type.equals(Long.class)) {
+    else if (klass == long.class || klass == Long.class) {
       final long value = unpacker.readLong();
       field.set(ann, value);
     }
-    else if (type.equals(float.class) || type.equals(Float.class)) {
+    else if (klass == float.class || klass == Float.class) {
       final float value = unpacker.readFloat();
       field.set(ann, value);
     }
-    else if (type.equals(double.class) || type.equals(Double.class)) {
+    else if (klass == double.class || klass == Double.class) {
       final double value = unpacker.readDouble();
       field.set(ann, value);
     }
-    else if (type.equals(boolean.class) || type.equals(Boolean.class)) {
+    else if (klass == boolean.class || klass == Boolean.class) {
       final boolean value = unpacker.readBoolean();
       field.set(ann, value);
     }
     else
-      throw new ReaderException("Unknown type (" + type + ") of field '" + field + "'");
+      throw new ReaderException("Unknown type (" + klass + ") of field '" + field + "'");
   }
 }

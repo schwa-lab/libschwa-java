@@ -59,6 +59,26 @@ public class Store<T extends Ann> implements List<T> {
     return items.containsAll(c);
   }
 
+  public T create(final Class<T> klass) {
+    T obj;
+    try {
+      obj = (T) klass.newInstance();
+    }
+    catch (IllegalAccessException e) {
+      throw new RuntimeException(e);
+    }
+    catch (InstantiationException e) {
+      throw new RuntimeException(e);
+    }
+    add(obj);
+    return obj;
+  }
+
+  public void create(final Class<T> klass, final int n) {
+    for (int i = 0; i != n; i++)
+      create(klass);
+  }
+
   @Override
   public boolean equals(Object o) {
     return items.equals(o);

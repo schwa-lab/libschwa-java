@@ -24,8 +24,13 @@ final class WriterHelper {
       else
         return writePointer(packer, fieldId, (Ann) value);
     }
-    else
-      return writePrimitive(packer, fieldId, value, fieldSchema.getField().getType());
+    else {
+      final Class<?> klass = fieldSchema.getField().getType();
+      if (klass == ByteSlice.class)
+        return writeByteSlice(packer, fieldId, (ByteSlice) value);
+      else
+        return writePrimitive(packer, fieldId, value, klass);
+    }
   }
 
 
@@ -129,7 +134,7 @@ final class WriterHelper {
     p.write(fieldId);
     p.writeArrayBegin(2);
     p.write(slice.start.getDRIndex());
-    p.write(slice.stop.getDRIndex() - slice.start.getDRIndex());
+    p.write(slice.stop.getDRIndex() - slice.start.getDRIndex() + 1);  // Pointer slices in Java have to be [inclusive, inclusive].
     p.writeArrayEnd();
     return true;
   }

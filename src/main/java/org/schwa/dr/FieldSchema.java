@@ -81,7 +81,7 @@ public final class FieldSchema {
   }
 
   public static FieldSchema createByteSlice(Field field, dr.Field drField) {
-    return new FieldSchema(field, field.getName(), drField.serial(), null, null, false, false, false, false);
+    return new FieldSchema(field, field.getName(), drField.serial(), null, null, false, false, true, false);
   }
 
   public static FieldSchema createPointer(Field field, dr.Pointer drPointer, Class<? extends Ann> pointedToKlass) {
