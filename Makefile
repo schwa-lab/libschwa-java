@@ -1,4 +1,4 @@
-.PHONY: all clean compile javadoc package run test wc
+.PHONY: all clean compile install javadoc package test wc
 
 all: compile
 
@@ -8,15 +8,14 @@ clean:
 compile:
 	mvn compile
 
+install:
+	mvn install
+
 javadoc:
 	mvn javadoc:aggregate
 
 package:
 	mvn package
-
-run: compile
-	javac -cp target/classes test/*.java
-	java -cp `find ${HOME}/.m2/repository -name '*.jar' | tr '\n' ':'`:target/classes:test App
 
 test:
 	mvn test
