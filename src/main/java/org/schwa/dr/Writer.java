@@ -103,7 +103,7 @@ public final class Writer {
       packer.writeArrayBegin(schema.getFields().size());
       for (RTFieldSchema field : schema.getFields()) {
         // <field> ::= { <field_type> : <field_val> }
-        final int nfields = 1 + (field.isPointer() ? 1 : 0) + (field.isSlice() ? 1 : 0) + (field.isCollection() ? 0 : 1) + (field.isSelfPointer() ? 1 : 0);
+        final int nfields = 1 + (field.isPointer() ? 1 : 0) + (field.isSlice() ? 1 : 0) + (field.isCollection() ? 1 : 0) + (field.isSelfPointer() ? 1 : 0);
         packer.writeMapBegin(nfields);
 
         // <field_type> ::= 0 # NAME => the name of the field
