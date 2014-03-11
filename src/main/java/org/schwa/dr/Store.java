@@ -65,10 +65,10 @@ public class Store<T extends Ann> implements List<T> {
       obj = (T) klass.newInstance();
     }
     catch (IllegalAccessException e) {
-      throw new RuntimeException(e);
+      throw new DocrepException(e);
     }
     catch (InstantiationException e) {
-      throw new RuntimeException(e);
+      throw new DocrepException(e);
     }
     add(obj);
     return obj;

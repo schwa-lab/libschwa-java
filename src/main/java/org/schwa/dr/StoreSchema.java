@@ -34,7 +34,7 @@ public final class StoreSchema {
       return (Store<? extends Ann>) field.get(doc);
     }
     catch (IllegalAccessException e) {
-      throw new RuntimeException(e);
+      throw new DocrepException(e);
     }
   }
 
@@ -51,10 +51,10 @@ public final class StoreSchema {
       }
     }
     catch (IllegalAccessException e) {
-      throw new RuntimeException(e);
+      throw new DocrepException(e);
     }
     catch (InstantiationException e) {
-      throw new RuntimeException(e);
+      throw new DocrepException(e);
     }
   }
 
@@ -63,7 +63,7 @@ public final class StoreSchema {
       return ((Store<?>) field.get(doc)).size();
     }
     catch (IllegalAccessException e) {
-      throw new RuntimeException(e);
+      throw new DocrepException(e);
     }
   }
 

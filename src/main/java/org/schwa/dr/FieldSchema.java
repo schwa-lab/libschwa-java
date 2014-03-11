@@ -40,7 +40,7 @@ public final class FieldSchema {
       return field.get(ann);
     }
     catch (IllegalAccessException e) {
-      throw new RuntimeException(e);
+      throw new DocrepException(e);
     }
   }
 

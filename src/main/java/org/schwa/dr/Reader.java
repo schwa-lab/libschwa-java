@@ -64,13 +64,13 @@ public final class Reader <T extends Doc> implements Iterable<T>, Iterator<T> {
       _readNext();
     }
     catch (IOException e) {
-      throw new RuntimeException(e);
+      throw new ReaderException(e);
     }
     catch (InstantiationException e) {
-      throw new RuntimeException(e);
+      throw new DocrepException(e);
     }
     catch (IllegalAccessException e) {
-      throw new RuntimeException(e);
+      throw new DocrepException(e);
     }
   }
 
