@@ -77,7 +77,7 @@ public class WriterTest {
     dos.write((byte) 0x01);  // <instance_nbytes>: 1 byte after this
     dos.write((byte) 0x80);  // <instance>: 0-element map
 
-    assertArrayEquals(expected.toByteArray(), actual.toByteArray());
+    Utils.assertArrayEquals(expected.toByteArray(), actual.toByteArray());
   }
 
 
@@ -111,7 +111,7 @@ public class WriterTest {
     dos.write((byte) 0xab);  // utf-8 encoded "/etc/passwd"
     dos.write("/etc/passwd".getBytes("UTF-8"));
 
-    assertArrayEquals(expected.toByteArray(), actual.toByteArray());
+    Utils.assertArrayEquals(expected.toByteArray(), actual.toByteArray());
   }
 
 
@@ -141,7 +141,7 @@ public class WriterTest {
     dos.write((byte) 0x01);  // <instance_nbytes>: 1 byte after this
     dos.write((byte) 0x80);  // <instance>: 0-element map
 
-    assertArrayEquals(expected.toByteArray(), actual.toByteArray());
+    Utils.assertArrayEquals(expected.toByteArray(), actual.toByteArray());
   }
 
 
@@ -175,7 +175,7 @@ public class WriterTest {
     dos.write((byte) 0xab);  // utf-8 encoded "/etc/passwd"
     dos.write("/etc/passwd".getBytes("UTF-8"));
 
-    assertArrayEquals(expected.toByteArray(), actual.toByteArray());
+    Utils.assertArrayEquals(expected.toByteArray(), actual.toByteArray());
   }
 
 
@@ -228,7 +228,7 @@ public class WriterTest {
     dos.write((byte) 0x01);  // <instance_nbytes>: 1 byte after this for the "as" store
     dos.write((byte) 0x90);  // <instance>: 0-element array
 
-    assertArrayEquals(expected.toByteArray(), actual.toByteArray());
+    Utils.assertArrayEquals(expected.toByteArray(), actual.toByteArray());
   }
 
 
@@ -292,7 +292,7 @@ public class WriterTest {
     dos.write(new byte[]{(byte)0x82, (byte)0x01, (byte)0x00, (byte)0x02, (byte)0xc2}); // {1: 0, 2: false}
     dos.write(new byte[]{(byte)0x82, (byte)0x01, (byte)0x00, (byte)0x02, (byte)0xc3}); // {1: 0, 2: true}
 
-    assertArrayEquals(expected.toByteArray(), actual.toByteArray());
+    Utils.assertArrayEquals(expected.toByteArray(), actual.toByteArray());
   }
 
 
@@ -398,71 +398,6 @@ public class WriterTest {
     dos.write((byte) 0x90);  // <instance>: 0-element array
 
 
-    assertArrayEquals(expected.toByteArray(), actual.toByteArray());
-  }
-
-
-  private static void assertArrayEquals(final byte[] e, final byte[] a) {
-    boolean different = false;
-    if (e.length != a.length)
-      different = true;
-    else
-      for (int i = 0; i != e.length; i++)
-        if (e[i] != a[i]) {
-          different = true;
-          break;
-        }
-    if (different)
-      compareByteArrays(e, a);
-    Assert.assertArrayEquals(e, a);
-  }
-
-
-  private static void compareByteArrays(final byte[] e, final byte[] a) {
-    int ei = 0, ai = 0;
-    System.out.print("          expected            |             actual            ||");
-    System.out.println("           expected            |             actual            ");
-    while (ei != e.length || ai != a.length) {
-      final int ei_start = ei, ai_start = ai;
-      for (int i = 0; i != 10; ++i) {
-        if (ei != e.length)
-          System.out.printf("%02x ", (int)(e[ei++] & 0xff));
-        else
-          System.out.print("   ");
-      }
-      System.out.print("| ");
-      for (int i = 0; i != 10; ++i) {
-        if (ai != a.length)
-          System.out.printf("%02x ", (int)(a[ai++] & 0xff));
-        else
-          System.out.print("   ");
-      }
-      System.out.print("|| ");
-      ei = ei_start;
-      ai = ai_start;
-      for (int i = 0; i != 10; ++i) {
-        if (ei != e.length) {
-          if (Character.isLetterOrDigit(e[ei]))
-            System.out.printf("%2c ", (int)(e[ei++] & 0xff));
-          else
-            System.out.printf("%02x ", (int)(e[ei++] & 0xff));
-        }
-        else
-          System.out.print("   ");
-      }
-      System.out.print("| ");
-      for (int i = 0; i != 10; ++i) {
-        if (ai != a.length) {
-          if (Character.isLetterOrDigit(a[ai]))
-            System.out.printf("%2c ", (int)(a[ai++] & 0xff));
-          else
-            System.out.printf("%02x ", (int)(a[ai++] & 0xff));
-        }
-        else
-          System.out.print("   ");
-      }
-      System.out.println();
-    }
-    System.out.println();
+    Utils.assertArrayEquals(expected.toByteArray(), actual.toByteArray());
   }
 }
