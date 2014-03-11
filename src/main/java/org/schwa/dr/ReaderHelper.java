@@ -21,7 +21,8 @@ final class ReaderHelper {
     final StoreSchema storeSchema = (rtStoreSchema == null) ? null : rtStoreSchema.getDef();
     if (rtFieldSchema.isPointer() && rtStoreSchema.isLazy())
       throw new ReaderException("Pointer field '" + field + "' cannot point into a lazy store");
-    if (rtFieldSchema.isPointer()) {
+
+    if (rtFieldSchema.isPointer() || rtFieldSchema.isSelfPointer()) {
       Store<? extends Ann> store;
       if (rtFieldSchema.isSelfPointer())
         store = currentStore;

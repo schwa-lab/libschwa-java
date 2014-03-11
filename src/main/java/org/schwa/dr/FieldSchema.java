@@ -101,14 +101,14 @@ public final class FieldSchema {
   }
 
   public static FieldSchema createSelfPointer(Field field, dr.SelfPointer drSelfPointer, Class<? extends Ann> pointedToKlass) {
-    return new FieldSchema(field, field.getName(), drSelfPointer.serial(), pointedToKlass, "", true, true, false, false);
+    return new FieldSchema(field, field.getName(), drSelfPointer.serial(), pointedToKlass, "", false, true, false, false);
   }
 
   public static FieldSchema createSelfPointerSlice(Field field, dr.SelfPointer drSelfPointer, Class<? extends Ann> pointedToKlass) {
-    return new FieldSchema(field, field.getName(), drSelfPointer.serial(), pointedToKlass, "", true, true, true, false);
+    return new FieldSchema(field, field.getName(), drSelfPointer.serial(), pointedToKlass, "", false, true, true, false);
   }
 
   public static FieldSchema createSelfPointers(Field field, dr.SelfPointer drSelfPointer, Class<? extends Ann> pointedToKlass) {
-    return new FieldSchema(field, field.getName(), drSelfPointer.serial(), pointedToKlass, "", true, true, false, true);
+    return new FieldSchema(field, field.getName(), drSelfPointer.serial(), pointedToKlass, "", false, true, false, true);
   }
 }

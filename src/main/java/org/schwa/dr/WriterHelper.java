@@ -16,7 +16,7 @@ final class WriterHelper {
     final int fieldId = rtFieldSchema.getFieldId();
     final Object value = fieldSchema.getFieldValue(ann);
 
-    if (rtFieldSchema.isPointer()) {
+    if (rtFieldSchema.isPointer() || rtFieldSchema.isSelfPointer()) {
       if (rtFieldSchema.isSlice())
         return writePointerSlice(packer, fieldId, (Slice<? extends Ann>) value);
       else if (rtFieldSchema.isCollection())

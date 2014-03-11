@@ -160,6 +160,7 @@ public final class Reader <T extends Doc> implements Iterable<T>, Iterator<T> {
           case 4:  // IS_COLLECTION
             unpacker.readNil();
             isCollection = true;
+            break;
           default:
             throw new ReaderException("Unknown value " + ((int) key) +  " as key in <field> map");
           }
