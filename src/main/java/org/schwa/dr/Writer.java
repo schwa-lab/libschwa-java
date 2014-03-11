@@ -17,153 +17,12 @@ import org.schwa.dr.runtime.RTStoreSchema;
 
 
 public final class Writer {
+  public static final byte WIRE_VERSION = 2;
+
   private final OutputStream out;
   private final DocSchema docSchema;
   private final MessagePack msgpack;
   private final Packer packer;
-
-  private static class WriteHelper {
-    public static boolean write(final Packer p, final RTFieldSchema field, final Ann ann) throws IOException {
-      final FieldSchema def = field.getDef();
-      final int fieldId = field.getFieldId();
-      final Object value = def.getFieldValue(ann);
-
-      switch (def.getFieldType()) {
-      case PRIMITIVE:
-        break;
-      case BYTE_SLICE:
-        return writeByteSlice(p, fieldId, (ByteSlice) value);
-      case POINTER:
-        return writePointer(p, fieldId, (Ann) value);
-      case POINTERS:
-        return writePointers(p, fieldId, (List<? extends Ann>) value);
-      case SLICE:
-        return writeSlice(p, fieldId, (Slice<? extends Ann>) value);
-      default:
-        throw new AssertionError("Field type is unknown (" + def.getFieldType() + ")");
-      }
-
-      final Class<?> type = def.getField().getType();
-      if (type.equals(String.class))
-        return writeString(p, fieldId, (String) value);
-      else if (type.equals(byte.class) || type.equals(Byte.class)) {
-        final Byte v = (Byte) value;
-        if (v != null) {
-          p.write(fieldId);
-          p.write(v.byteValue());
-          return true;
-        }
-      }
-      else if (type.equals(char.class) || type.equals(Character.class)) {
-        final Character v = (Character) value;
-        if (v != null) {
-          p.write(fieldId);
-          p.write(v.charValue());
-          return true;
-        }
-      }
-      else if (type.equals(short.class) || type.equals(Short.class)) {
-        final Short v = (Short) value;
-        if (v != null) {
-          p.write(fieldId);
-          p.write(v.shortValue());
-          return true;
-        }
-      }
-      else if (type.equals(int.class) || type.equals(Integer.class)) {
-        final Integer v = (Integer) value;
-        if (v != null) {
-          p.write(fieldId);
-          p.write(v.intValue());
-          return true;
-        }
-      }
-      else if (type.equals(long.class) || type.equals(Long.class)) {
-        final Long v = (Long) value;
-        if (v != null) {
-          p.write(fieldId);
-          p.write(v.longValue());
-          return true;
-        }
-      }
-      else if (type.equals(float.class) || type.equals(Float.class)) {
-        final Float v = (Float) value;
-        if (v != null) {
-          p.write(fieldId);
-          p.write(v.floatValue());
-          return true;
-        }
-      }
-      else if (type.equals(double.class) || type.equals(Double.class)) {
-        final Double v = (Double) value;
-        if (v != null) {
-          p.write(fieldId);
-          p.write(v.doubleValue());
-          return true;
-        }
-      }
-      else if (type.equals(boolean.class) || type.equals(Boolean.class)) {
-        final Boolean v = (Boolean) value;
-        if (v != null) {
-          p.write(fieldId);
-          p.write(v.booleanValue());
-          return true;
-        }
-      }
-      else
-        throw new WriterException("Unknown type of field (" + type + ")");
-      return false;
-    }
-
-    private static boolean writeByteSlice(final Packer p, final int fieldId, final ByteSlice slice) throws IOException {
-      if (slice == null)
-        return false;
-      p.write(fieldId);
-      p.writeArrayBegin(2);
-      p.write(slice.start);
-      p.write(slice.stop - slice.start);
-      p.writeArrayEnd();
-      return true;
-    }
-
-    private static boolean writePointer(final Packer p, final int fieldId, final Ann ann) throws IOException {
-      if (ann == null)
-        return false;
-      p.write(fieldId);
-      p.write(ann.getDRIndex());
-      return true;
-    }
-
-    private static boolean writePointers(final Packer p, final int fieldId, final List<? extends Ann> annotations) throws IOException {
-      if (annotations == null || annotations.isEmpty())
-        return false;
-      p.write(fieldId);
-      p.writeArrayBegin(annotations.size());
-      for (Ann ann : annotations)
-        p.write(ann.getDRIndex());
-      p.writeArrayEnd();
-      return true;
-    }
-
-    private static boolean writeSlice(final Packer p, final int fieldId, final Slice<? extends Ann> slice) throws IOException {
-      if (slice == null)
-        return false;
-      p.write(fieldId);
-      p.writeArrayBegin(2);
-      p.write(slice.start.getDRIndex());
-      p.write(slice.stop.getDRIndex() - slice.start.getDRIndex());
-      p.writeArrayEnd();
-      return true;
-    }
-
-    private static boolean writeString(final Packer p, final int fieldId, final String s) throws IOException {
-      if (s == null || s.isEmpty())
-        return false;
-      p.write(fieldId);
-      p.write(s);
-      return true;
-    }
-  }
 
   public Writer(OutputStream out, DocSchema docSchema) {
     this.out = out;
@@ -173,8 +32,12 @@ public final class Writer {
   }
 
   public void write(final Doc doc) throws IOException {
+    // Ger or construct the RTManager for the document.
     final RTManager rt = RTFactory.buildOrMerge(doc.getRT(), docSchema);
     final RTAnnSchema rtDocSchema = rt.getDocSchema();
+
+    // <wire_version>
+    packer.write(WIRE_VERSION);
 
     // <klasses>
     writeKlassesHeader(rt.getSchemas(), rtDocSchema);
@@ -192,22 +55,22 @@ public final class Writer {
     }
 
     // <instances_groups> ::= <instances_group>*
-    for (RTStoreSchema store : rtDocSchema.getStores()) {
+    for (RTStoreSchema rtStoreSchema : rtDocSchema.getStores()) {
       // <instances_group> ::= <instances_nbytes> <instances>
-      if (store.isLazy()) {
-        final byte[] lazy = store.getLazyData();
+      if (rtStoreSchema.isLazy()) {
+        final byte[] lazy = rtStoreSchema.getLazyData();
         packer.write(lazy.length);
         packer.flush();
         out.write(lazy, 0, lazy.length);
       }
       else {
-        final RTAnnSchema storedKlass = store.getStoredKlass();
-        final Store<? extends Ann> annotations = store.getDef().getStore(doc);
+        final RTAnnSchema storedKlass = rtStoreSchema.getStoredKlass();
+        final Store<? extends Ann> store = rtStoreSchema.getDef().getStore(doc);
 
         final ByteArrayOutputStream bos = new ByteArrayOutputStream();
         final DataOutputStream dos = new DataOutputStream(bos);
-        writeArrayBegin(dos, annotations.size());
-        for (Ann ann : annotations)
+        writeArrayBegin(dos, store.size());
+        for (Ann ann : store)
           writeInstance(ann, storedKlass, doc, dos);
         packer.write(bos.size());
         bos.writeTo(out);
@@ -240,15 +103,12 @@ public final class Writer {
       packer.writeArrayBegin(schema.getFields().size());
       for (RTFieldSchema field : schema.getFields()) {
         // <field> ::= { <field_type> : <field_val> }
-        final int nfields = 1 + (field.isPointer() ? 1 : 0) + (field.isSlice() ? 1 : 0);
+        final int nfields = 1 + (field.isPointer() ? 1 : 0) + (field.isSlice() ? 1 : 0) + (field.isCollection() ? 0 : 1) + (field.isSelfPointer() ? 1 : 0);
         packer.writeMapBegin(nfields);
 
         // <field_type> ::= 0 # NAME => the name of the field
         packer.write((byte) 0);
-        if (field.isLazy())
-          packer.write(field.getSerial());
-        else
-          packer.write(field.getDef().getSerial());
+        packer.write(field.isLazy() ? field.getSerial() : field.getDef().getSerial());
 
         // <field_type> ::= 1 # POINTER_TO => the <store_id> that this field points into
         if (field.isPointer()) {
@@ -259,16 +119,28 @@ public final class Writer {
         // <field_type> ::= 2 # IS_SLICE => whether or not this field is a "Slice" field
         if (field.isSlice()) {
           packer.write((byte) 2);
-          packer.write(true);
+          packer.writeNil();
+        }
+
+        // <field_type>  ::= 3 # IS_SELF_POINTER => whether or not this field is a self-pointer. POINTER_TO and IS_SELF_POINTER are mutually exclusive.
+        if (field.isSelfPointer()) {
+          packer.write((byte) 3);
+          packer.writeNil();
+        }
+
+        // <field_type>  ::= 4 # IS_COLLECTION => whether or not this field is a collection. IS_COLLECTION and IS_SLICE are mutually exclusive.
+        if (field.isCollection()) {
+          packer.write((byte) 4);
+          packer.writeNil();
         }
 
         packer.writeMapEnd(); // <field>
-      }
+      }  // for each field.
       packer.writeArrayEnd(); // <fields>
 
       packer.writeArrayEnd(); // <klass>
       i++;
-    }
+    }  // for each klass.
     packer.writeArrayEnd(); // <klasses>
   }
 
@@ -278,24 +150,18 @@ public final class Writer {
     for (RTStoreSchema store : stores) {
       // <store> ::= ( <store_name>, <type_id>, <store_nelem> )
       packer.writeArrayBegin(3);
-
-      // <store_name>
-      if (store.isLazy())
+      if (store.isLazy()) {
         packer.write(store.getSerial());
-      else
-        packer.write(store.getDef().getSerial());
-
-      // <type_id>
-      packer.write(store.getStoredKlass().getKlassId());
-
-      // <store_nelem>
-      if (store.isLazy())
+        packer.write(store.getStoredKlass().getKlassId());
         packer.write(store.getLazyNElem());
-      else
+      }
+      else {
+        packer.write(store.getDef().getSerial());
+        packer.write(store.getStoredKlass().getKlassId());
         packer.write(store.getDef().size(doc));
-
+      }
       packer.writeArrayEnd(); // <store>
-    }
+    }  // for each store.
     packer.writeArrayEnd(); // <stores>
   }
 
@@ -305,7 +171,7 @@ public final class Writer {
 
     int nNewElem = 0;
     for (RTFieldSchema field : schema.getFields())
-      if (!field.isLazy() && WriteHelper.write(p, field, ann))
+      if (!field.isLazy() && WriterHelper.write(p, field, ann))
         nNewElem++;
     p.flush();
 
