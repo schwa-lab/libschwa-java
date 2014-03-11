@@ -17,8 +17,7 @@ public class WriterTest {
 
   @dr.Doc
   public static class DocWithFieldSerial extends AbstractDoc {
-    @dr.Field(serial="filename")
-    public String name;
+    @dr.Field(serial="filename") public String name;
   }
 
   @dr.Ann
@@ -30,16 +29,13 @@ public class WriterTest {
 
   @dr.Ann
   public static class Y extends AbstractAnn {
-    @dr.Pointer(store="as")
-    public A p;
+    @dr.Pointer(store="as") public A p;
   }
 
   @dr.Ann
   public static class Z extends AbstractAnn {
-    @dr.Pointer(store="as")
-    public A p;
-    @dr.Field
-    public boolean value;
+    @dr.Pointer(store="as") public A p;
+    @dr.Field               public boolean value;
   }
 
   @dr.Doc
@@ -67,6 +63,7 @@ public class WriterTest {
     ByteArrayOutputStream expected = new ByteArrayOutputStream();
     DataOutputStream dos = new DataOutputStream(expected);
 
+    dos.write((byte) 0x02);  // <wire_version>
     dos.write((byte) 0x91);  // <klasses>: 1-element array
     dos.write((byte) 0x92);  // <klass>: 2-element array
     dos.write((byte) 0xa8);  // <klass_name>: 8-bytes of utf-8 encoded "__meta__"
@@ -97,6 +94,7 @@ public class WriterTest {
     ByteArrayOutputStream expected = new ByteArrayOutputStream();
     DataOutputStream dos = new DataOutputStream(expected);
 
+    dos.write((byte) 0x02);  // <wire_version>
     dos.write((byte) 0x91);  // <klasses>: 1-element array
     dos.write((byte) 0x92);  // <klass>: 2-element array
     dos.write((byte) 0xa8);  // <klass_name>: 8-bytes of utf-8 encoded "__meta__"
@@ -129,6 +127,7 @@ public class WriterTest {
     ByteArrayOutputStream expected = new ByteArrayOutputStream();
     DataOutputStream dos = new DataOutputStream(expected);
 
+    dos.write((byte) 0x02);  // <wire_version>
     dos.write((byte) 0x91);  // <klasses>: 1-element array
     dos.write((byte) 0x92);  // <klass>: 2-element array
     dos.write((byte) 0xa8);  // <klass_name>: 8-bytes of utf-8 encoded "__meta__"
@@ -159,6 +158,7 @@ public class WriterTest {
     ByteArrayOutputStream expected = new ByteArrayOutputStream();
     DataOutputStream dos = new DataOutputStream(expected);
 
+    dos.write((byte) 0x02);  // <wire_version>
     dos.write((byte) 0x91);  // <klasses>: 1-element array
     dos.write((byte) 0x92);  // <klass>: 2-element array
     dos.write((byte) 0xa8);  // <klass_name>: 8-bytes of utf-8 encoded "__meta__"
@@ -195,6 +195,7 @@ public class WriterTest {
     ByteArrayOutputStream expected = new ByteArrayOutputStream();
     DataOutputStream dos = new DataOutputStream(expected);
 
+    dos.write((byte) 0x02);  // <wire_version>
     dos.write((byte) 0x92);  // <klasses>: 2-element array
     dos.write((byte) 0x92);  // <klass>: 2-element array
     dos.write((byte) 0xa8);  // <klass_name>: utf-8 encoded "__meta__"
@@ -252,6 +253,7 @@ public class WriterTest {
     ByteArrayOutputStream expected = new ByteArrayOutputStream();
     DataOutputStream dos = new DataOutputStream(expected);
 
+    dos.write((byte) 0x02);  // <wire_version>
     dos.write((byte) 0x92);  // <klasses>: 2-element array
     dos.write((byte) 0x92);  // <klass>: 2-element array
     dos.write((byte) 0xa8);  // <klass_name>: utf-8 encoded "__meta__"
@@ -312,6 +314,7 @@ public class WriterTest {
     ByteArrayOutputStream expected = new ByteArrayOutputStream();
     DataOutputStream dos = new DataOutputStream(expected);
 
+    dos.write((byte) 0x02);  // <wire_version>
     dos.write((byte) 0x94);  // <klasses>: 4-element array
     dos.write((byte) 0x92);  // <klass>: 2-element array
 
