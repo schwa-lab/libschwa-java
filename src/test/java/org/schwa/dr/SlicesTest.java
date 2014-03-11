@@ -60,11 +60,6 @@ public class SlicesTest {
     doc0.sents.get(0).span = new Slice(doc0.tokens.get(0), doc0.tokens.get(4));
     doc0.sents.get(1).span = new Slice(doc0.tokens.get(5), doc0.tokens.get(9));
 
-    ByteArrayOutputStream actual = new ByteArrayOutputStream();
-    DocSchema schema = DocSchema.create(Doc.class);
-    Writer writer = new Writer(actual, schema);
-    writer.write(doc0);
-
     final byte[] correct = {
       (byte)0x02,
       (byte)0x93,
@@ -104,6 +99,11 @@ public class SlicesTest {
           (byte)0x82, (byte)0x00, (byte)0x92, (byte)0x05, (byte)0x05, (byte)0x01, (byte)0x00,
     };
 
+    ByteArrayOutputStream actual = new ByteArrayOutputStream();
+    DocSchema schema = DocSchema.create(Doc.class);
+    Writer writer = new Writer(actual, schema);
+    writer.write(doc0);
+
     Utils.assertArrayEquals(correct, actual.toByteArray());
 
     Reader reader = new Reader(new ByteArrayInputStream(correct), schema);
@@ -134,5 +134,12 @@ public class SlicesTest {
     Assert.assertEquals(doc1.tokens.get(8).span, new ByteSlice(35, 38));
     Assert.assertEquals(".", doc1.tokens.get(9).raw);
     Assert.assertEquals(doc1.tokens.get(9).span, new ByteSlice(38, 39));
+
+    Assert.assertSame(doc1.tokens.get(0), doc1.sents.get(0).span.start);
+    Assert.assertSame(doc1.tokens.get(4), doc1.sents.get(0).span.stop);
+    Assert.assertEquals(0, doc1.sents.get(0).number);
+    Assert.assertSame(doc1.tokens.get(5), doc1.sents.get(1).span.start);
+    Assert.assertSame(doc1.tokens.get(9), doc1.sents.get(1).span.stop);
+    Assert.assertEquals(0, doc1.sents.get(1).number);
   }
 }
