@@ -3,7 +3,7 @@ package org.schwa.dr;
 import java.io.IOException;
 import java.util.List;
 
-import org.msgpack.packer.Packer;
+import org.msgpack.core.MessagePacker;
 
 import org.schwa.dr.runtime.RTFieldSchema;
 
@@ -11,7 +11,7 @@ import org.schwa.dr.runtime.RTFieldSchema;
 final class WriterHelper {
   private WriterHelper() { }
 
-  public static boolean write(final Packer packer, final RTFieldSchema rtFieldSchema, final Ann ann) throws IOException {
+  public static boolean write(final MessagePacker packer, final RTFieldSchema rtFieldSchema, final Ann ann) throws IOException {
     final FieldSchema fieldSchema = rtFieldSchema.getDef();
     final int fieldId = rtFieldSchema.getFieldId();
     final Object value = fieldSchema.getFieldValue(ann);
@@ -34,70 +34,70 @@ final class WriterHelper {
   }
 
 
-  private static boolean writePrimitive(final Packer p, final int fieldId, final Object value, final Class<?> klass) throws IOException {
+  private static boolean writePrimitive(final MessagePacker packer, final int fieldId, final Object value, final Class<?> klass) throws IOException {
     if (klass == String.class)
-      return writeString(p, fieldId, (String) value);
+      return writeString(packer, fieldId, (String) value);
     else if (klass == byte.class || klass == Byte.class) {
       final Byte v = (Byte) value;
       if (v != null) {
-        p.write(fieldId);
-        p.write(v.byteValue());
+        packer.packInt(fieldId);
+        packer.packByte(v.byteValue());
         return true;
       }
     }
     else if (klass == char.class || klass == Character.class) {
       final Character v = (Character) value;
       if (v != null) {
-        p.write(fieldId);
-        p.write(v.charValue());
+        packer.packInt(fieldId);
+        packer.packInt(v.charValue());
         return true;
       }
     }
     else if (klass == short.class || klass == Short.class) {
       final Short v = (Short) value;
       if (v != null) {
-        p.write(fieldId);
-        p.write(v.shortValue());
+        packer.packInt(fieldId);
+        packer.packShort(v.shortValue());
         return true;
       }
     }
     else if (klass == int.class || klass == Integer.class) {
       final Integer v = (Integer) value;
       if (v != null) {
-        p.write(fieldId);
-        p.write(v.intValue());
+        packer.packInt(fieldId);
+        packer.packInt(v.intValue());
         return true;
       }
     }
     else if (klass == long.class || klass == Long.class) {
       final Long v = (Long) value;
       if (v != null) {
-        p.write(fieldId);
-        p.write(v.longValue());
+        packer.packInt(fieldId);
+        packer.packLong(v.longValue());
         return true;
       }
     }
     else if (klass == float.class || klass == Float.class) {
       final Float v = (Float) value;
       if (v != null) {
-        p.write(fieldId);
-        p.write(v.floatValue());
+        packer.packInt(fieldId);
+        packer.packFloat(v.floatValue());
         return true;
       }
     }
     else if (klass == double.class || klass == Double.class) {
       final Double v = (Double) value;
       if (v != null) {
-        p.write(fieldId);
-        p.write(v.doubleValue());
+        packer.packInt(fieldId);
+        packer.packDouble(v.doubleValue());
         return true;
       }
     }
     else if (klass == boolean.class || klass == Boolean.class) {
       final Boolean v = (Boolean) value;
       if (v != null) {
-        p.write(fieldId);
-        p.write(v.booleanValue());
+        packer.packInt(fieldId);
+        packer.packBoolean(v.booleanValue());
         return true;
       }
     }
@@ -107,57 +107,54 @@ final class WriterHelper {
   }
 
 
-  private static boolean writeByteSlice(final Packer p, final int fieldId, final ByteSlice slice) throws IOException {
+  private static boolean writeByteSlice(final MessagePacker packer, final int fieldId, final ByteSlice slice) throws IOException {
     if (slice == null)
       return false;
-    p.write(fieldId);
-    p.writeArrayBegin(2);
-    p.write(slice.start);
-    p.write(slice.stop - slice.start);
-    p.writeArrayEnd();
+    packer.packInt(fieldId);
+    packer.packArrayHeader(2);
+    packer.packLong(slice.start);
+    packer.packLong(slice.stop - slice.start);
     return true;
   }
 
 
-  private static boolean writePointer(final Packer p, final int fieldId, final Ann ann) throws IOException {
+  private static boolean writePointer(final MessagePacker packer, final int fieldId, final Ann ann) throws IOException {
     if (ann == null)
       return false;
-    p.write(fieldId);
-    p.write(ann.getDRIndex());
+    packer.packInt(fieldId);
+    packer.packInt(ann.getDRIndex());
     return true;
   }
 
 
-  private static boolean writePointerSlice(final Packer p, final int fieldId, final Slice<? extends Ann> slice) throws IOException {
+  private static boolean writePointerSlice(final MessagePacker packer, final int fieldId, final Slice<? extends Ann> slice) throws IOException {
     if (slice == null)
       return false;
-    p.write(fieldId);
-    p.writeArrayBegin(2);
-    p.write(slice.start.getDRIndex());
-    p.write(slice.stop.getDRIndex() - slice.start.getDRIndex() + 1);  // Pointer slices in Java have to be [inclusive, inclusive].
-    p.writeArrayEnd();
+    packer.packInt(fieldId);
+    packer.packArrayHeader(2);
+    packer.packInt(slice.start.getDRIndex());
+    packer.packInt(slice.stop.getDRIndex() - slice.start.getDRIndex() + 1);  // Pointer slices in Java have to be [inclusive, inclusive].
     return true;
   }
 
 
 
-  private static boolean writePointers(final Packer p, final int fieldId, final List<? extends Ann> annotations) throws IOException {
+  private static boolean writePointers(final MessagePacker packer, final int fieldId, final List<? extends Ann> annotations) throws IOException {
     if (annotations == null || annotations.isEmpty())
       return false;
-    p.write(fieldId);
-    p.writeArrayBegin(annotations.size());
+    packer.packInt(fieldId);
+    packer.packArrayHeader(annotations.size());
     for (Ann ann : annotations)
-      p.write(ann.getDRIndex());
-    p.writeArrayEnd();
+      packer.packInt(ann.getDRIndex());
     return true;
   }
 
 
-  private static boolean writeString(final Packer p, final int fieldId, final String s) throws IOException {
+  private static boolean writeString(final MessagePacker packer, final int fieldId, final String s) throws IOException {
     if (s == null || s.isEmpty())
       return false;
-    p.write(fieldId);
-    p.write(s);
+    packer.packInt(fieldId);
+    packer.packString(s);
     return true;
   }
 }

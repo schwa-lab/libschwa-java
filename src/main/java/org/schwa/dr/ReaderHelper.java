@@ -5,7 +5,7 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.msgpack.unpacker.Unpacker;
+import org.msgpack.core.MessageUnpacker;
 
 import org.schwa.dr.runtime.RTFieldSchema;
 import org.schwa.dr.runtime.RTStoreSchema;
@@ -14,7 +14,7 @@ import org.schwa.dr.runtime.RTStoreSchema;
 final class ReaderHelper {
   private ReaderHelper() { }
 
-  public static void read(final RTFieldSchema rtFieldSchema, final Ann ann, final Doc doc, final Store<? extends Ann> currentStore, final Unpacker unpacker) throws IOException, IllegalAccessException {
+  public static void read(final RTFieldSchema rtFieldSchema, final Ann ann, final Doc doc, final Store<? extends Ann> currentStore, final MessageUnpacker unpacker) throws IOException, IllegalAccessException {
     final FieldSchema fieldSchema = rtFieldSchema.getDef();
     final Field field = fieldSchema.getField();
     final RTStoreSchema rtStoreSchema = rtFieldSchema.getContainingStore();
@@ -46,12 +46,12 @@ final class ReaderHelper {
   }
 
 
-  private static void readByteSlice(final Field field, final Ann ann, final Unpacker unpacker) throws IOException, IllegalAccessException {
-    final int npair = unpacker.readArrayBegin();
+  private static void readByteSlice(final Field field, final Ann ann, final MessageUnpacker unpacker) throws IOException, IllegalAccessException {
+    final int npair = unpacker.unpackArrayHeader();
     if (npair != 2)
       throw new ReaderException("Invalid sized list read in for SLICE: expected 2 elements but found " + npair);
-    final long a = unpacker.readLong();
-    final long b = unpacker.readLong();
+    final long a = unpacker.unpackLong();
+    final long b = unpacker.unpackLong();
     ByteSlice slice = (ByteSlice) field.get(ann);
     if (slice == null) {
       slice = new ByteSlice();
@@ -59,22 +59,21 @@ final class ReaderHelper {
     }
     slice.start = a;
     slice.stop = a + b;
-    unpacker.readArrayEnd();
   }
 
 
-  private static void readPointer(final Field field, final Ann ann, final Store<? extends Ann> store, final Unpacker unpacker) throws IOException, IllegalAccessException {
-    final int index = unpacker.readInt();
+  private static void readPointer(final Field field, final Ann ann, final Store<? extends Ann> store, final MessageUnpacker unpacker) throws IOException, IllegalAccessException {
+    final int index = unpacker.unpackInt();
     field.set(ann, store.get(index));
   }
 
 
-  private static void readPointerSlice(final Field field, final Ann ann, final Store<? extends Ann> store, final Unpacker unpacker) throws IOException, IllegalAccessException {
-    final int npair = unpacker.readArrayBegin();
+  private static void readPointerSlice(final Field field, final Ann ann, final Store<? extends Ann> store, final MessageUnpacker unpacker) throws IOException, IllegalAccessException {
+    final int npair = unpacker.unpackArrayHeader();
     if (npair != 2)
       throw new ReaderException("Invalid sized list read in for SLICE: expected 2 elements but found " + npair);
-    final int a = unpacker.readInt();
-    final int b = unpacker.readInt();
+    final int a = unpacker.unpackInt();
+    final int b = unpacker.unpackInt();
     Slice slice = (Slice) field.get(ann);
     if (slice == null) {
       slice = new Slice();
@@ -82,57 +81,55 @@ final class ReaderHelper {
     }
     slice.start = store.get(a);
     slice.stop = store.get(a + b - 1);  // Pointer slices in Java have to be [inclusive, inclusive].
-    unpacker.readArrayEnd();
   }
 
 
-  private static void readPointers(final Field field, final Ann ann, final Store<? extends Ann> store, final Unpacker unpacker) throws IOException, IllegalAccessException {
-    final int nitems = unpacker.readArrayBegin();
+  private static void readPointers(final Field field, final Ann ann, final Store<? extends Ann> store, final MessageUnpacker unpacker) throws IOException, IllegalAccessException {
+    final int nitems = unpacker.unpackArrayHeader();
     List<Ann> list = new ArrayList<Ann>(nitems);
     for (int i = 0; i != nitems; i++) {
-      final int index = unpacker.readInt();
+      final int index = unpacker.unpackInt();
       list.add(store.get(index));
     }
-    unpacker.readArrayEnd();
     field.set(ann, list);
   }
 
 
-  private static void readPrimitive(final Field field, final Ann ann, final Class<?> klass, final Unpacker unpacker) throws IOException, IllegalAccessException {
+  private static void readPrimitive(final Field field, final Ann ann, final Class<?> klass, final MessageUnpacker unpacker) throws IOException, IllegalAccessException {
     if (klass == String.class) {
-      final String value = unpacker.readString();
+      final String value = unpacker.unpackString();
       field.set(ann, value);
     }
     else if (klass == byte.class || klass == Byte.class) {
-      final byte value = unpacker.readByte();
+      final byte value = unpacker.unpackByte();
       field.set(ann, value);
     }
     else if (klass == char.class || klass == Character.class) {
-      final char value = (char) unpacker.readInt();
+      final char value = (char) unpacker.unpackInt();
       field.set(ann, value);
     }
     else if (klass == short.class || klass == Short.class) {
-      final short value = unpacker.readShort();
+      final short value = unpacker.unpackShort();
       field.set(ann, value);
     }
     else if (klass == int.class || klass == Integer.class) {
-      final int value = unpacker.readInt();
+      final int value = unpacker.unpackInt();
       field.set(ann, value);
     }
     else if (klass == long.class || klass == Long.class) {
-      final long value = unpacker.readLong();
+      final long value = unpacker.unpackLong();
       field.set(ann, value);
     }
     else if (klass == float.class || klass == Float.class) {
-      final float value = unpacker.readFloat();
+      final float value = unpacker.unpackFloat();
       field.set(ann, value);
     }
     else if (klass == double.class || klass == Double.class) {
-      final double value = unpacker.readDouble();
+      final double value = unpacker.unpackDouble();
       field.set(ann, value);
     }
     else if (klass == boolean.class || klass == Boolean.class) {
-      final boolean value = unpacker.readBoolean();
+      final boolean value = unpacker.unpackBoolean();
       field.set(ann, value);
     }
     else

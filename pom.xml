@@ -22,8 +22,8 @@
     </dependency>
     <dependency>
       <groupId>org.msgpack</groupId>
-      <artifactId>msgpack</artifactId>
-      <version>0.6.10</version>
+      <artifactId>msgpack-core</artifactId>
+      <version>0.7.0-M4</version>
     </dependency>
   </dependencies>
 

@@ -8,10 +8,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.msgpack.MessagePack;
-import org.msgpack.packer.Packer;
-import org.msgpack.type.Value;
-import org.msgpack.unpacker.Unpacker;
+import org.msgpack.core.MessagePackFactory;
+import org.msgpack.core.MessagePacker;
+import org.msgpack.core.MessageUnpacker;
+import org.msgpack.value.holder.ValueHolder;
 
 import org.schwa.dr.runtime.RTAnnSchema;
 import org.schwa.dr.runtime.RTFactory;
@@ -25,15 +25,13 @@ public final class Reader <T extends Doc> implements Iterable<T>, Iterator<T> {
 
   private final InputStream in;
   private final DocSchema docSchema;
-  private final MessagePack msgpack;
-  private final Unpacker unpacker;
+  private final MessageUnpacker unpacker;
   private T doc;
 
   public Reader(InputStream in, DocSchema docSchema) {
     this.in = in;
     this.docSchema = docSchema;
-    this.msgpack = new MessagePack();
-    this.unpacker = msgpack.createUnpacker(in);
+    this.unpacker = MessagePackFactory.newDefaultUnpacker(in);
     readNext();
   }
 
@@ -81,7 +79,7 @@ public final class Reader <T extends Doc> implements Iterable<T>, Iterator<T> {
     // <wire_version> ::= UINT
     byte wireVersion;
     try {
-      wireVersion = unpacker.readByte();
+      wireVersion = unpacker.unpackByte();
     }
     catch (EOFException e) {
       doc = null;
@@ -109,16 +107,16 @@ public final class Reader <T extends Doc> implements Iterable<T>, Iterator<T> {
 
     // Read the klasses header.
     // <klasses> ::= [ <klass> ]
-    final int nklasses = unpacker.readArrayBegin();
+    final int nklasses = unpacker.unpackArrayHeader();
     for (int k = 0; k != nklasses; k++) {
       // <klass> ::= ( <klass_name>, <fields> )
-      final int npair = unpacker.readArrayBegin();
+      final int npair = unpacker.unpackArrayHeader();
       if (npair != 2)
         throw new ReaderException("Invalid sized tuple read in: expected 2 elements but found " + npair);
 
       // Read in the class name and check that we have a registered class with this name.
       RTAnnSchema rtAnnSchema;
-      final String klassName = unpacker.readString();
+      final String klassName = unpacker.unpackString();
       final AnnSchema schema = klassNameMap.get(klassName);
       if (schema == null)
         rtAnnSchema = new RTAnnSchema(k, klassName);
@@ -131,41 +129,40 @@ public final class Reader <T extends Doc> implements Iterable<T>, Iterator<T> {
         klassIdMeta = k;
 
       // <fields> ::= [ <field> ]
-      final int nfields = unpacker.readArrayBegin();
+      final int nfields = unpacker.unpackArrayHeader();
       for (int f = 0; f != nfields; f++) {
         String fieldName = null;
         int storeId = -1;
         boolean isPointer = false, isSelfPointer = false, isSlice = false, isCollection = false;
 
         // <field> ::= { <field_type> : <field_val> }
-        final int nitems = unpacker.readMapBegin();
+        final int nitems = unpacker.unpackMapHeader();
         for (int i = 0; i != nitems; ++i) {
-          final byte key = unpacker.readByte();
+          final byte key = unpacker.unpackByte();
           switch (key) {
           case 0:  // NAME
-            fieldName = unpacker.readString();
+            fieldName = unpacker.unpackString();
             break;
           case 1:  // POINTER_TO
-            storeId = unpacker.readInt();
+            storeId = unpacker.unpackInt();
             isPointer = true;
             break;
           case 2:  // IS_SLICE
-            unpacker.readNil();
+            unpacker.unpackNil();
             isSlice = true;
             break;
           case 3:  // IS_SELF_POINTER
-            unpacker.readNil();
+            unpacker.unpackNil();
             isSelfPointer = true;
             break;
           case 4:  // IS_COLLECTION
-            unpacker.readNil();
+            unpacker.unpackNil();
             isCollection = true;
             break;
           default:
             throw new ReaderException("Unknown value " + ((int) key) +  " as key in <field> map");
           }
         }  // for each field.
-        unpacker.readMapEnd();
         if (fieldName == null)
           throw new ReaderException("Field number " + (f + 1) + " did not contain a NAME key");
 
@@ -201,10 +198,7 @@ public final class Reader <T extends Doc> implements Iterable<T>, Iterator<T> {
         if (isPointer)
           rtFieldSchemaToStoreIds.put(rtFieldSchema, storeId);
       } // for each field
-      unpacker.readArrayEnd();
-      unpacker.readArrayEnd();
     } // for each klass
-    unpacker.readArrayEnd();
 
     if (klassIdMeta == null)
       throw new ReaderException("Did not read in a __meta__ class");
@@ -213,16 +207,15 @@ public final class Reader <T extends Doc> implements Iterable<T>, Iterator<T> {
 
     // Read the stores header.
     // <stores> ::= [ <store> ]
-    final int nstores = unpacker.readArrayBegin();
+    final int nstores = unpacker.unpackArrayHeader();
     for (int n = 0; n != nstores; n++) {
       // <store> ::= ( <store_name>, <klass_id>, <store_nelem> )
-      final int ntriple = unpacker.readArrayBegin();
+      final int ntriple = unpacker.unpackArrayHeader();
       if (ntriple != 3)
         throw new ReaderException("Invalid sized tuple read in: expected 3 elements but found " + ntriple);
-      final String storeName = unpacker.readString();
-      final int klassId = unpacker.readInt();
-      final int nElem = unpacker.readInt();
-      unpacker.readArrayEnd();
+      final String storeName = unpacker.unpackString();
+      final int klassId = unpacker.unpackInt();
+      final int nElem = unpacker.unpackInt();
 
       // Sanity check on the value of the klassId.
       if (klassId >= rt.getSchemas().size())
@@ -256,7 +249,6 @@ public final class Reader <T extends Doc> implements Iterable<T>, Iterator<T> {
         def.resize(nElem, doc);
       }
     }  // for each store.
-    unpacker.readArrayEnd();
 
 
     // Back-fill each of the pointer fields to point to the actual RTStoreSchema instance.
@@ -288,7 +280,7 @@ public final class Reader <T extends Doc> implements Iterable<T>, Iterator<T> {
     // Read the document instance.
     // <doc_instance> ::= <instances_nbytes> <instance>
     do {
-      final long _instancesNBytes = unpacker.readLong();
+      final long _instancesNBytes = unpacker.unpackLong();
       if (_instancesNBytes > Integer.MAX_VALUE)
         throw new ReaderException("<instances_nbytes> is too large for Java (" + _instancesNBytes + ")");
       final int instancesNBytes = (int) _instancesNBytes;
@@ -306,26 +298,26 @@ public final class Reader <T extends Doc> implements Iterable<T>, Iterator<T> {
       }
 
       final ByteArrayOutputStream lazyBOS = new ByteArrayOutputStream(instancesNBytes);
-      final Packer lazyPacker = msgpack.createPacker(lazyBOS);
+      final MessagePacker lazyPacker = MessagePackFactory.newDefaultPacker(lazyBOS);
       int lazyNElem = 0;
 
       // <instance> ::= { <field_id> : <obj_val> }
-      final int nitems = unpacker.readMapBegin();
+      final int nitems = unpacker.unpackMapHeader();
       for (int i = 0; i != nitems; i++) {
-        final int key = unpacker.readInt();
+        final int key = unpacker.unpackInt();
         final RTFieldSchema field = rtDocSchema.getField(key);
 
         // deserialize the field value if required
         if (field.isLazy()) {
-          final Value lazyValue = unpacker.readValue();
-          lazyPacker.write(key);
-          lazyValue.writeTo(lazyPacker);
+          final ValueHolder lazyValue = new ValueHolder();
+          unpacker.unpackValue(lazyValue);
+          lazyPacker.packInt(key);
+          lazyPacker.packValue(lazyValue.get());
           lazyNElem++;
         }
         else
           ReaderHelper.read(field, doc, doc, null, unpacker);
       }  // for each field.
-      unpacker.readMapEnd();
 
       // Store the lazy slab on the doc if it was used.
       if (lazyNElem != 0) {
@@ -340,7 +332,7 @@ public final class Reader <T extends Doc> implements Iterable<T>, Iterator<T> {
     // <instances_groups> ::= <instances_group>*
     for (RTStoreSchema rtStoreSchema : rtDocSchema.getStores()) {
       // <instances_group>  ::= <instances_nbytes> <instances>
-      final long _instancesNBytes = unpacker.readLong();
+      final long _instancesNBytes = unpacker.unpackLong();
       if (_instancesNBytes > Integer.MAX_VALUE)
         throw new ReaderException("<instances_nbytes> is too large for Java (" + _instancesNBytes + ")");
       final int instancesNBytes = (int) _instancesNBytes;
@@ -360,30 +352,30 @@ public final class Reader <T extends Doc> implements Iterable<T>, Iterator<T> {
       final Store<? extends Ann> store = rtStoreSchema.getDef().getStore(doc);
 
       // <instances> ::= [ <instance> ]
-      final int ninstances = unpacker.readArrayBegin();
+      final int ninstances = unpacker.unpackArrayHeader();
       for (int o = 0; o != ninstances; o++) {
         final Ann ann = store.get(o);
         final ByteArrayOutputStream lazyBOS = new ByteArrayOutputStream();
-        final Packer lazyPacker = msgpack.createPacker(lazyBOS);
+        final MessagePacker lazyPacker = MessagePackFactory.newDefaultPacker(lazyBOS);
         int lazyNElem = 0;
 
         // <instance> ::= { <field_id> : <obj_val> }
-        final int nitems = unpacker.readMapBegin();
+        final int nitems = unpacker.unpackMapHeader();
         for (int i = 0; i != nitems; i++) {
-          final int key = unpacker.readInt();
+          final int key = unpacker.unpackInt();
           final RTFieldSchema field = storedKlass.getField(key);
 
           // Deserialize the field value, if required.
           if (field.isLazy()) {
-            final Value lazyValue = unpacker.readValue();
-            lazyPacker.write(key);
-            lazyValue.writeTo(lazyPacker);
+            final ValueHolder lazyValue = new ValueHolder();
+            unpacker.unpackValue(lazyValue);
+            lazyPacker.packInt(key);
+            lazyPacker.packValue(lazyValue.get());
             lazyNElem++;
           }
           else
             ReaderHelper.read(field, ann, doc, store, unpacker);
         }  // for each field.
-        unpacker.readMapEnd();
 
         // If there were any lazy fields on the Ann instance, store them on the instance.
         if (lazyNElem != 0) {
@@ -392,8 +384,6 @@ public final class Reader <T extends Doc> implements Iterable<T>, Iterator<T> {
           ann.setDRLazyNElem(lazyNElem);
         }
       }  // for each instance
-
-      unpacker.readArrayEnd();
     }  // for each instance group
   }
 }

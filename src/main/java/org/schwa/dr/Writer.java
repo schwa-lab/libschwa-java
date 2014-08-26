@@ -6,8 +6,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
 
-import org.msgpack.MessagePack;
-import org.msgpack.packer.Packer;
+import org.msgpack.core.MessagePackFactory;
+import org.msgpack.core.MessagePacker;
 
 import org.schwa.dr.runtime.RTAnnSchema;
 import org.schwa.dr.runtime.RTFactory;
@@ -21,14 +21,12 @@ public final class Writer {
 
   private final OutputStream out;
   private final DocSchema docSchema;
-  private final MessagePack msgpack;
-  private final Packer packer;
+  private final MessagePacker packer;
 
   public Writer(OutputStream out, DocSchema docSchema) {
     this.out = out;
     this.docSchema = docSchema;
-    this.msgpack = new MessagePack();
-    this.packer = msgpack.createPacker(out);
+    this.packer = MessagePackFactory.newDefaultPacker(out);
   }
 
   public void write(final Doc doc) throws IOException {
@@ -37,7 +35,7 @@ public final class Writer {
     final RTAnnSchema rtDocSchema = rt.getDocSchema();
 
     // <wire_version>
-    packer.write(WIRE_VERSION);
+    packer.packByte(WIRE_VERSION);
 
     // <klasses>
     writeKlassesHeader(rt.getSchemas(), rtDocSchema);
@@ -50,7 +48,7 @@ public final class Writer {
       final ByteArrayOutputStream bos = new ByteArrayOutputStream();
       final DataOutputStream dos = new DataOutputStream(bos);
       writeInstance(doc, rtDocSchema, doc, dos);
-      packer.write(bos.size());
+      packer.packInt(bos.size());
       bos.writeTo(out);
     }
 
@@ -59,7 +57,7 @@ public final class Writer {
       // <instances_group> ::= <instances_nbytes> <instances>
       if (rtStoreSchema.isLazy()) {
         final byte[] lazy = rtStoreSchema.getLazyData();
-        packer.write(lazy.length);
+        packer.packInt(lazy.length);
         packer.flush();
         out.write(lazy, 0, lazy.length);
       }
@@ -69,10 +67,10 @@ public final class Writer {
 
         final ByteArrayOutputStream bos = new ByteArrayOutputStream();
         final DataOutputStream dos = new DataOutputStream(bos);
-        writeArrayBegin(dos, store.size());
+        packArrayHeader(dos, store.size());
         for (Ann ann : store)
           writeInstance(ann, storedKlass, doc, dos);
-        packer.write(bos.size());
+        packer.packInt(bos.size());
         bos.writeTo(out);
       }
     }
@@ -83,91 +81,83 @@ public final class Writer {
 
   private void writeKlassesHeader(final List<RTAnnSchema> schemas, final RTAnnSchema rtDocSchema) throws IOException {
     // <klasses> ::= [ <klass> ]
-    packer.writeArrayBegin(schemas.size());
+    packer.packArrayHeader(schemas.size());
     int i = 0;
     for (RTAnnSchema schema : schemas) {
       // <klass> ::= ( <klass_name>, <fields> )
-      packer.writeArrayBegin(2);
+      packer.packArrayHeader(2);
       if (schema.getKlassId() != i)
         throw new AssertionError();
 
       // <klass_name>
       if (schema == rtDocSchema)
-        packer.write("__meta__");
+        packer.packString("__meta__");
       else if (schema.isLazy())
-        packer.write(schema.getSerial());
+        packer.packString(schema.getSerial());
       else
-        packer.write(schema.getDef().getSerial());
+        packer.packString(schema.getDef().getSerial());
 
       // <fields> ::= [ <field> ]
-      packer.writeArrayBegin(schema.getFields().size());
+      packer.packArrayHeader(schema.getFields().size());
       for (RTFieldSchema field : schema.getFields()) {
         // <field> ::= { <field_type> : <field_val> }
         final int nfields = 1 + (field.isPointer() ? 1 : 0) + (field.isSlice() ? 1 : 0) + (field.isCollection() ? 1 : 0) + (field.isSelfPointer() ? 1 : 0);
-        packer.writeMapBegin(nfields);
+        packer.packMapHeader(nfields);
 
         // <field_type> ::= 0 # NAME => the name of the field
-        packer.write((byte) 0);
-        packer.write(field.isLazy() ? field.getSerial() : field.getDef().getSerial());
+        packer.packByte((byte) 0);
+        packer.packString(field.isLazy() ? field.getSerial() : field.getDef().getSerial());
 
         // <field_type> ::= 1 # POINTER_TO => the <store_id> that this field points into
         if (field.isPointer()) {
-          packer.write((byte) 1);
-          packer.write(field.getContainingStore().getStoreId());
+          packer.packByte((byte) 1);
+          packer.packInt(field.getContainingStore().getStoreId());
         }
 
         // <field_type> ::= 2 # IS_SLICE => whether or not this field is a "Slice" field
         if (field.isSlice()) {
-          packer.write((byte) 2);
-          packer.writeNil();
+          packer.packByte((byte) 2);
+          packer.packNil();
         }
 
         // <field_type>  ::= 3 # IS_SELF_POINTER => whether or not this field is a self-pointer. POINTER_TO and IS_SELF_POINTER are mutually exclusive.
         if (field.isSelfPointer()) {
-          packer.write((byte) 3);
-          packer.writeNil();
+          packer.packByte((byte) 3);
+          packer.packNil();
         }
 
         // <field_type>  ::= 4 # IS_COLLECTION => whether or not this field is a collection. IS_COLLECTION and IS_SLICE are mutually exclusive.
         if (field.isCollection()) {
-          packer.write((byte) 4);
-          packer.writeNil();
+          packer.packByte((byte) 4);
+          packer.packNil();
         }
-
-        packer.writeMapEnd(); // <field>
       }  // for each field.
-      packer.writeArrayEnd(); // <fields>
-
-      packer.writeArrayEnd(); // <klass>
       i++;
     }  // for each klass.
-    packer.writeArrayEnd(); // <klasses>
   }
 
   private void writeStoresHeader(final List<RTStoreSchema> stores, final Doc doc) throws IOException {
     // <stores> ::= [ <store> ]
-    packer.writeArrayBegin(stores.size());
+    packer.packArrayHeader(stores.size());
     for (RTStoreSchema store : stores) {
       // <store> ::= ( <store_name>, <type_id>, <store_nelem> )
-      packer.writeArrayBegin(3);
+      packer.packArrayHeader(3);
       if (store.isLazy()) {
-        packer.write(store.getSerial());
-        packer.write(store.getStoredKlass().getKlassId());
-        packer.write(store.getLazyNElem());
+        packer.packString(store.getSerial());
+        packer.packInt(store.getStoredKlass().getKlassId());
+        packer.packInt(store.getLazyNElem());
       }
       else {
-        packer.write(store.getDef().getSerial());
-        packer.write(store.getStoredKlass().getKlassId());
-        packer.write(store.getDef().size(doc));
+        packer.packString(store.getDef().getSerial());
+        packer.packInt(store.getStoredKlass().getKlassId());
+        packer.packInt(store.getDef().size(doc));
       }
-      packer.writeArrayEnd(); // <store>
     }  // for each store.
-    packer.writeArrayEnd(); // <stores>
   }
 
   private void writeInstance(final Ann ann, final RTAnnSchema schema, final Doc doc, final DataOutputStream out) throws IOException {
     final ByteArrayOutputStream bos = new ByteArrayOutputStream();
-    final Packer p = msgpack.createPacker(bos);
+    final MessagePacker p = MessagePackFactory.newDefaultPacker(bos);
 
     int nNewElem = 0;
     for (RTFieldSchema field : schema.getFields())
@@ -186,7 +176,7 @@ public final class Writer {
     }
   }
 
-  private static void writeArrayBegin(final DataOutputStream out, final int size) throws IOException {
+  private static void packArrayHeader(final DataOutputStream out, final int size) throws IOException {
     if (size < 16)
       out.write((byte) (0x90 | size));
     else if (size < 65536) {
