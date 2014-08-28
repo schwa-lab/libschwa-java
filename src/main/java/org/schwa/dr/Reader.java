@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import org.msgpack.core.buffer.InputStreamBufferInput;
 import org.msgpack.core.MessagePackFactory;
 import org.msgpack.core.MessagePacker;
 import org.msgpack.core.MessageUnpacker;
@@ -21,7 +22,7 @@ import org.schwa.dr.runtime.RTStoreSchema;
 
 
 public final class Reader <T extends Doc> implements Iterable<T>, Iterator<T> {
-  public static final byte WIRE_VERSION = 2;
+  public static final byte WIRE_VERSION = 3;
 
   private final InputStream in;
   private final DocSchema docSchema;
@@ -31,7 +32,7 @@ public final class Reader <T extends Doc> implements Iterable<T>, Iterator<T> {
   public Reader(InputStream in, DocSchema docSchema) {
     this.in = in;
     this.docSchema = docSchema;
-    this.unpacker = MessagePackFactory.newDefaultUnpacker(in);
+    this.unpacker = new MessageUnpacker(new InputStreamBufferInput(in, 1));  // We don't want the InputStreamBufferInput to actually do any buffering.
     readNext();
   }
 

@@ -61,7 +61,7 @@ public class SlicesTest {
     doc0.sents.get(1).span = new Slice(doc0.tokens.get(5), doc0.tokens.get(9));
 
     final byte[] correct = {
-      (byte)0x02,
+      (byte)0x03,
       (byte)0x93,
         (byte)0x92,
           (byte)0xa8, '_', '_', 'm', 'e', 't', 'a', '_', '_',

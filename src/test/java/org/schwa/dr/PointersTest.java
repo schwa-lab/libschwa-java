@@ -58,7 +58,7 @@ public class PointersTest {
         doc0.xs.get(i).prior.add(doc0.xs.get(j));
 
     final byte[] correct = {
-      (byte)0x02,
+      (byte)0x03,
       (byte)0x93,  // <klasses>: 3-element array
 
       (byte)0x92,  // <klass>: 2-element array

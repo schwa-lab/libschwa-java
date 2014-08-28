@@ -63,7 +63,7 @@ public class WriterTest {
     ByteArrayOutputStream expected = new ByteArrayOutputStream();
     DataOutputStream dos = new DataOutputStream(expected);
 
-    dos.write((byte) 0x02);  // <wire_version>
+    dos.write((byte) 0x03);  // <wire_version>
     dos.write((byte) 0x91);  // <klasses>: 1-element array
     dos.write((byte) 0x92);  // <klass>: 2-element array
     dos.write((byte) 0xa8);  // <klass_name>: 8-bytes of utf-8 encoded "__meta__"
@@ -94,7 +94,7 @@ public class WriterTest {
     ByteArrayOutputStream expected = new ByteArrayOutputStream();
     DataOutputStream dos = new DataOutputStream(expected);
 
-    dos.write((byte) 0x02);  // <wire_version>
+    dos.write((byte) 0x03);  // <wire_version>
     dos.write((byte) 0x91);  // <klasses>: 1-element array
     dos.write((byte) 0x92);  // <klass>: 2-element array
     dos.write((byte) 0xa8);  // <klass_name>: 8-bytes of utf-8 encoded "__meta__"
@@ -127,7 +127,7 @@ public class WriterTest {
     ByteArrayOutputStream expected = new ByteArrayOutputStream();
     DataOutputStream dos = new DataOutputStream(expected);
 
-    dos.write((byte) 0x02);  // <wire_version>
+    dos.write((byte) 0x03);  // <wire_version>
     dos.write((byte) 0x91);  // <klasses>: 1-element array
     dos.write((byte) 0x92);  // <klass>: 2-element array
     dos.write((byte) 0xa8);  // <klass_name>: 8-bytes of utf-8 encoded "__meta__"
@@ -158,7 +158,7 @@ public class WriterTest {
     ByteArrayOutputStream expected = new ByteArrayOutputStream();
     DataOutputStream dos = new DataOutputStream(expected);
 
-    dos.write((byte) 0x02);  // <wire_version>
+    dos.write((byte) 0x03);  // <wire_version>
     dos.write((byte) 0x91);  // <klasses>: 1-element array
     dos.write((byte) 0x92);  // <klass>: 2-element array
     dos.write((byte) 0xa8);  // <klass_name>: 8-bytes of utf-8 encoded "__meta__"
@@ -195,7 +195,7 @@ public class WriterTest {
     ByteArrayOutputStream expected = new ByteArrayOutputStream();
     DataOutputStream dos = new DataOutputStream(expected);
 
-    dos.write((byte) 0x02);  // <wire_version>
+    dos.write((byte) 0x03);  // <wire_version>
     dos.write((byte) 0x92);  // <klasses>: 2-element array
     dos.write((byte) 0x92);  // <klass>: 2-element array
     dos.write((byte) 0xa8);  // <klass_name>: utf-8 encoded "__meta__"
@@ -253,7 +253,7 @@ public class WriterTest {
     ByteArrayOutputStream expected = new ByteArrayOutputStream();
     DataOutputStream dos = new DataOutputStream(expected);
 
-    dos.write((byte) 0x02);  // <wire_version>
+    dos.write((byte) 0x03);  // <wire_version>
     dos.write((byte) 0x92);  // <klasses>: 2-element array
     dos.write((byte) 0x92);  // <klass>: 2-element array
     dos.write((byte) 0xa8);  // <klass_name>: utf-8 encoded "__meta__"
@@ -314,7 +314,7 @@ public class WriterTest {
     ByteArrayOutputStream expected = new ByteArrayOutputStream();
     DataOutputStream dos = new DataOutputStream(expected);
 
-    dos.write((byte) 0x02);  // <wire_version>
+    dos.write((byte) 0x03);  // <wire_version>
     dos.write((byte) 0x94);  // <klasses>: 4-element array
     dos.write((byte) 0x92);  // <klass>: 2-element array
 

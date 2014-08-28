@@ -17,7 +17,7 @@ import org.schwa.dr.runtime.RTStoreSchema;
 
 
 public final class Writer {
-  public static final byte WIRE_VERSION = 2;
+  public static final byte WIRE_VERSION = 3;
 
   private final OutputStream out;
   private final DocSchema docSchema;
@@ -49,6 +49,7 @@ public final class Writer {
       final DataOutputStream dos = new DataOutputStream(bos);
       writeInstance(doc, rtDocSchema, doc, dos);
       packer.packInt(bos.size());
+      packer.flush();
       bos.writeTo(out);
     }
 
@@ -67,15 +68,17 @@ public final class Writer {
 
         final ByteArrayOutputStream bos = new ByteArrayOutputStream();
         final DataOutputStream dos = new DataOutputStream(bos);
-        packArrayHeader(dos, store.size());
+        writeArrayHeader(dos, store.size());
         for (Ann ann : store)
           writeInstance(ann, storedKlass, doc, dos);
         packer.packInt(bos.size());
+        packer.flush();
         bos.writeTo(out);
       }
     }
 
     // flush since we've written a whole document
+    packer.flush();
     out.flush();
   }
 
@@ -157,13 +160,16 @@ public final class Writer {
 
   private void writeInstance(final Ann ann, final RTAnnSchema schema, final Doc doc, final DataOutputStream out) throws IOException {
     final ByteArrayOutputStream bos = new ByteArrayOutputStream();
-    final MessagePacker p = MessagePackFactory.newDefaultPacker(bos);
 
     int nNewElem = 0;
-    for (RTFieldSchema field : schema.getFields())
-      if (!field.isLazy() && WriterHelper.write(p, field, ann))
+    final MessagePacker packer = MessagePackFactory.newDefaultPacker(bos);
+    for (RTFieldSchema field : schema.getFields()) {
+      if (field.isLazy())
+        continue;
+      if (WriterHelper.write(packer, field, ann))
         nNewElem++;
-    p.flush();
+    }
+    packer.flush();
 
     final int nElem = nNewElem + ann.getDRLazyNElem();
     writeMapBegin(out, nElem);
@@ -176,7 +182,7 @@ public final class Writer {
     }
   }
 
-  private static void packArrayHeader(final DataOutputStream out, final int size) throws IOException {
+  private static void writeArrayHeader(final DataOutputStream out, final int size) throws IOException {
     if (size < 16)
       out.write((byte) (0x90 | size));
     else if (size < 65536) {

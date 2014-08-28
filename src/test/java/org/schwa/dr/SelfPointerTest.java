@@ -44,7 +44,7 @@ public class SelfPointerTest {
     doc0.xs2.get(1).other = doc0.xs2.get(0);
 
     final byte[] correct = {
-      (byte)0x02,
+      (byte)0x03,
       (byte)0x92,  // <klasses>: 2-element array
       (byte)0x92,  // <klass>: 2-element array
       (byte)0xa8, '_', '_', 'm', 'e', 't', 'a', '_', '_',  // <klass_name>: 8-bytes of utf-8 encoded "__meta__"
