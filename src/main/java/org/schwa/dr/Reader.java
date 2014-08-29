@@ -30,6 +30,8 @@ public final class Reader <T extends Doc> implements Iterable<T>, Iterator<T> {
   private T doc;
 
   public Reader(InputStream in, DocSchema docSchema) {
+    if (!in.markSupported())
+      throw new ReaderException("The input stream needs to support marking");
     this.in = in;
     this.docSchema = docSchema;
     this.unpacker = new MessageUnpacker(new InputStreamBufferInput(in, 1));  // We don't want the InputStreamBufferInput to actually do any buffering.
@@ -294,7 +296,7 @@ public final class Reader <T extends Doc> implements Iterable<T>, Iterator<T> {
           throw new ReaderException("Failed to read in " + instancesNBytes + " from the input stream");
 
         // Attach the lazy fields to the doc.
-        // TODO
+        rtDocSchema.setLazy(lazyBytes);
         break;
       }
 
@@ -345,6 +347,7 @@ public final class Reader <T extends Doc> implements Iterable<T>, Iterator<T> {
         if (nbytesRead != instancesNBytes)
           throw new ReaderException("Failed to read in " + instancesNBytes + " from the input stream");
 
+        // Attach the lazy store to the rtStore instance.
         rtStoreSchema.setLazy(lazyBytes);
         continue;
       }
@@ -374,8 +377,25 @@ public final class Reader <T extends Doc> implements Iterable<T>, Iterator<T> {
             lazyPacker.packValue(lazyValue.get());
             lazyNElem++;
           }
-          else
+          else {
+            in.mark(0);
+            final int availableBefore = in.available();
             ReaderHelper.read(field, ann, doc, store, unpacker);
+            final int availableAfter = in.available();
+
+            // Keep a lazy serialized copy of the field if required.
+            if (field.getDef().getMode() == FieldMode.READ_ONLY) {
+              in.reset();
+              final int lazyNBytes = availableBefore - availableAfter;
+              final byte[] lazyData = new byte[lazyNBytes];
+              final int nRead = in.read(lazyData);
+              if (nRead != lazyNBytes)
+                throw new ReaderException("Failed to read the correct number of bytes");
+              lazyPacker.packInt(key);
+              lazyBOS.write(lazyData);
+              lazyNElem++;
+            }
+          }
         }  // for each field.
 
         // If there were any lazy fields on the Ann instance, store them on the instance.

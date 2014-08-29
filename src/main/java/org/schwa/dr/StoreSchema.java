@@ -7,18 +7,24 @@ public final class StoreSchema {
   private final Field field;
   private final String name;
   private final Class<? extends Ann> storedKlass;
+  private final FieldMode mode;
   private String serial;
 
-  private StoreSchema(Field field, Class<? extends Ann> storedKlass, String name, String serial) {
+  private StoreSchema(Field field, Class<? extends Ann> storedKlass, String name, FieldMode mode, String serial) {
     this.field = field;
     this.name = name;
     this.storedKlass = storedKlass;
+    this.mode = mode;
     serial = serial.trim();
     this.serial = serial.isEmpty() ? name : serial;
   }
 
   public Field getField() {
     return field;
+  }
+
+  public FieldMode getMode() {
+    return mode;
   }
 
   public String getName() {
@@ -58,6 +64,10 @@ public final class StoreSchema {
     }
   }
 
+  public void setSerial(String serial) {
+    this.serial = serial;
+  }
+
   public int size(final Doc doc) {
     try {
       return ((Store<?>) field.get(doc)).size();
@@ -68,6 +78,6 @@ public final class StoreSchema {
   }
 
   public static StoreSchema create(Field field, Class<? extends Ann> storedKlass, dr.Store drStore) {
-    return new StoreSchema(field, storedKlass, field.getName(), drStore.serial());
+    return new StoreSchema(field, storedKlass, field.getName(), drStore.mode(), drStore.serial());
   }
 }

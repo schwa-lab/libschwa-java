@@ -45,12 +45,20 @@ public final class Writer {
 
     // <doc_instance> ::= <instances_nbytes> <instance>
     {
-      final ByteArrayOutputStream bos = new ByteArrayOutputStream();
-      final DataOutputStream dos = new DataOutputStream(bos);
-      writeInstance(doc, rtDocSchema, doc, dos);
-      packer.packInt(bos.size());
-      packer.flush();
-      bos.writeTo(out);
+      if (rtDocSchema.isLazy()) {
+        final byte[] lazyData = rtDocSchema.getLazyData();
+        packer.packInt(lazyData.length);
+        packer.flush();
+        out.write(lazyData);
+      }
+      else {
+        final ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        final DataOutputStream dos = new DataOutputStream(bos);
+        writeInstance(doc, rtDocSchema, doc, dos);
+        packer.packInt(bos.size());
+        packer.flush();
+        bos.writeTo(out);
+      }
     }
 
     // <instances_groups> ::= <instances_group>*
@@ -176,7 +184,7 @@ public final class Writer {
     if (nElem != 0) {
       if (ann.getDRLazyNElem() != 0) {
         final byte[] lazy = ann.getDRLazy();
-        out.write(lazy, 0, lazy.length);
+        out.write(lazy);
       }
       bos.writeTo(out);
     }

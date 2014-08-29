@@ -47,6 +47,7 @@ public final class dr {
   @Target({ElementType.FIELD})
   public static @interface Store {
     String serial() default "";
+    FieldMode mode() default FieldMode.READ_WRITE;
   }
 
   /**
@@ -60,6 +61,7 @@ public final class dr {
   @Target({ElementType.FIELD})
   public static @interface Field {
     String serial() default "";
+    FieldMode mode() default FieldMode.READ_WRITE;
   }
 
   /**
@@ -75,6 +77,7 @@ public final class dr {
   public @interface Pointer {
     String store();
     String serial() default "";
+    FieldMode mode() default FieldMode.READ_WRITE;
   }
 
   /**
@@ -89,5 +92,6 @@ public final class dr {
   @Target({ElementType.FIELD})
   public @interface SelfPointer {
     String serial() default "";
+    FieldMode mode() default FieldMode.READ_WRITE;
   }
 }

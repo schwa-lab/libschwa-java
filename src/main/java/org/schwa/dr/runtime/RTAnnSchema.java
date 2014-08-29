@@ -12,6 +12,7 @@ public final class RTAnnSchema {
   private AnnSchema def;
   private List<RTFieldSchema> fields;
   private List<RTStoreSchema> stores;
+  private byte[] lazy;
 
   public RTAnnSchema(int klassId, String serial) {
     this(klassId, serial, null);
@@ -23,6 +24,7 @@ public final class RTAnnSchema {
     this.def = def;
     this.fields = new ArrayList<RTFieldSchema>();
     this.stores = new ArrayList<RTStoreSchema>();
+    this.lazy = null;
   }
 
   public void addField(RTFieldSchema field) {
@@ -49,6 +51,10 @@ public final class RTAnnSchema {
     return klassId;
   }
 
+  public byte[] getLazyData() {
+    return lazy;
+  }
+
   public String getSerial() {
     return serial;
   }
@@ -71,5 +77,9 @@ public final class RTAnnSchema {
 
   public void setDef(AnnSchema def) {
     this.def = def;
+  }
+
+  public void setLazy(byte[] lazy) {
+    this.lazy = lazy;
   }
 }
