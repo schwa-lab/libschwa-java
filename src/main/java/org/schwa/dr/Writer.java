@@ -172,20 +172,18 @@ public final class Writer {
     int nNewElem = 0;
     final MessagePacker packer = MessagePackFactory.newDefaultPacker(bos);
     for (RTFieldSchema field : schema.getFields()) {
-      if (field.isLazy())
-        continue;
-      if (WriterHelper.write(packer, field, ann))
-        nNewElem++;
+      if (!field.isLazy() && field.getDef().getMode() == FieldMode.READ_WRITE) {
+        if (WriterHelper.write(packer, field, ann))
+          nNewElem++;
+      }
     }
     packer.flush();
 
     final int nElem = nNewElem + ann.getDRLazyNElem();
     writeMapBegin(out, nElem);
     if (nElem != 0) {
-      if (ann.getDRLazyNElem() != 0) {
-        final byte[] lazy = ann.getDRLazy();
-        out.write(lazy);
-      }
+      if (ann.getDRLazyNElem() != 0)
+        out.write(ann.getDRLazy());
       bos.writeTo(out);
     }
   }
