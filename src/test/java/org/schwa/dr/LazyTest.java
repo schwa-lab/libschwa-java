@@ -109,14 +109,9 @@ public class LazyTest {
     Reader<DocB> reader1 = new Reader(new ByteArrayInputStream(stream0.toByteArray()), schema1In);
     Writer writer1 = new Writer(stream1, schema1Out);
 
-    int ndocs_read1 = 0;
-    while (true) {
-      DocB doc1;
-      if (!reader1.hasNext())
-        break;
-
-      doc1 = reader1.next();
-      ndocs_read1++;
+    int nDocsRead1 = 0;
+    for (DocB doc1 : reader1) {
+      nDocsRead1++;
 
       // Check annotation values.
       Assert.assertEquals(NWORDS, doc1.bs.size());
@@ -150,5 +145,42 @@ public class LazyTest {
 
       writer1.write(doc1);
     }
+    Assert.assertEquals(1, nDocsRead1);
+
+    Utils.assertArrayEquals(stream1Expected, stream1.toByteArray());
+
+    DocSchema schema2 = DocSchema.create(DocA.class);
+    schema2.getStore("as").setSerial("bs");
+    schema2.getSchema(A.class).setSerial("B");
+    schema2.getSchema(A.class).getField("v_str").setSerial("word");
+    schema2.getSchema(A.class).getField("v_bool").setSerial("is_first");
+    Reader<DocA> reader2 = new Reader(new ByteArrayInputStream(stream1.toByteArray()), schema2);
+
+    int nDocsRead2 = 0;
+    for (DocA doc2 : reader2) {
+      nDocsRead2++;
+
+      // Check annotation values.
+      Assert.assertEquals(NWORDS, doc2.as.size());
+      for (int i = 0; i != NWORDS; ++i) {
+        final A a = doc2.as.get(i);
+        Assert.assertEquals(WORDS[i], a.v_str);
+        Assert.assertEquals((byte)i, a.v_uint8);
+        Assert.assertEquals(i == 0, a.v_bool);
+      }
+
+      // Check document lazy.
+      Assert.assertNull(doc2.getDRLazy());
+      Assert.assertEquals(0, doc2.getDRLazyNElem());
+
+      // Check annotation lazy.
+      for (int i = 0; i != NWORDS; ++i) {
+        final A a = doc2.as.get(i);
+        Assert.assertNotNull(a.getDRLazy());
+        Assert.assertEquals(1, a.getDRLazyNElem());
+        Assert.assertEquals(1 + (a.v_str.length() + 1), a.getDRLazy().length);
+      }
+    }
+    Assert.assertEquals(1, nDocsRead2);
   }
 }
