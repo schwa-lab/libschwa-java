@@ -11,7 +11,12 @@ import java.util.List;
 import java.util.Map;
 
 
-public class DocSchema extends AnnSchema {
+/**
+ * Schema class for docrep annotation {@link Doc} implementations.
+ *
+ * @author Tim Dawborn
+ **/
+public final class DocSchema extends AnnSchema {
   public static final Class<?>[] ALLOWED_FIELD_KLASSES = {byte.class, char.class, short.class, int.class, long.class, float.class, double.class, boolean.class, String.class, ByteSlice.class};
   public static final Class<? extends Annotation>[] ANNOTATION_KLASSES = (Class<? extends Annotation>[]) new Class<?>[]{dr.Field.class, dr.Pointer.class, dr.SelfPointer.class, dr.Store.class};
 
@@ -25,25 +30,42 @@ public class DocSchema extends AnnSchema {
     traverseDocKlass();
   }
 
+  /**
+   * Adds an {@link AnnSchema} schema that this document class has annotation instances for.
+   **/
   public void addSchema(final AnnSchema annSchema) {
     annSchemas.add(annSchema);
   }
 
+  /**
+   * Adds a new {@link StoreSchema} to the list of fields on this document class.
+   **/
   public void addStore(final StoreSchema storeSchema) {
     storeSchemas.add(storeSchema);
   }
 
+  /**
+   * Returns the schema for the annotation on this document class whose {@link Class} matches the
+   * provided class. This method returns null if no annotation class matches.
+   **/
   public AnnSchema getSchema(final Class<? extends Ann> klass) {
     for (AnnSchema ann : annSchemas)
-      if (ann.klass.equals(klass))
+      if (ann.getKlass().equals(klass))
         return ann;
     return null;
   }
 
+  /**
+   * Returns a list of schema objects for all annotation types that this document contains.
+   **/
   public List<AnnSchema> getSchemas() {
     return annSchemas;
   }
 
+  /**
+   * Returns the schema for the stores on this annotation class whose name matches the provided
+   * name. This method returns null if no field matches.
+   **/
   public StoreSchema getStore(final String name) {
     for (StoreSchema store : storeSchemas)
       if (store.getName().equals(name))
@@ -51,12 +73,26 @@ public class DocSchema extends AnnSchema {
     return null;
   }
 
+  /**
+   * Returns a list of schema objects for all of the stores on this annotation class.
+   **/
   public List<StoreSchema> getStores() {
     return storeSchemas;
   }
 
+  /**
+   * Returns whether or not this document has a store with the provided name.
+   * @see DocSchema#getStore
+   **/
   public boolean hasStore(final String name) {
     return getStore(name) != null;
+  }
+
+  /**
+   * Returns whether or not this document class has any stores.
+   **/
+  public boolean hasStores() {
+    return !storeSchemas.isEmpty();
   }
 
   private void traverseDocKlass() {
@@ -86,9 +122,9 @@ public class DocSchema extends AnnSchema {
       // Create the AnnSchema object for tyhe stored class.
       AnnSchema annSchema;  // FIXME this will create duplicates if the klass is already seen in another store.
       if (drAnn.serial().isEmpty())
-        annSchema = new AnnSchema(storedKlass, storedKlass.getSimpleName());
+        annSchema = AnnSchema.create(storedKlass, storedKlass.getSimpleName());
       else
-        annSchema = new AnnSchema(storedKlass, storedKlass.getSimpleName(), drAnn.serial());
+        annSchema = AnnSchema.create(storedKlass, storedKlass.getSimpleName(), drAnn.serial());
       addSchema(annSchema);
     }
 

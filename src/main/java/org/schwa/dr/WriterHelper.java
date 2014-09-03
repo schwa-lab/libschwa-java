@@ -8,6 +8,12 @@ import org.msgpack.core.MessagePacker;
 import org.schwa.dr.runtime.RTFieldSchema;
 
 
+/**
+ * Internal helper class for {@link Writer}.
+ *
+ * @author Tim Dawborn
+ * @see Writer
+ **/
 final class WriterHelper {
   private WriterHelper() { }
 

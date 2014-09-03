@@ -3,16 +3,22 @@ package org.schwa.dr;
 import org.schwa.dr.runtime.RTManager;
 
 
+/**
+ * Abstract base class for the {@link Doc} interface.
+ *
+ * @author Tim Dawborn
+ **/
 public abstract class AbstractDoc extends AbstractAnn implements Doc {
-  private RTManager rt;
+  /** The runtime manager for this document. **/
+  protected RTManager drRT;
 
   @Override
-  public RTManager getRT() {
-    return rt;
+  public final RTManager getDRRT() {
+    return drRT;
   }
 
   @Override
-  public void setRT(RTManager rt) {
-    this.rt = rt;
+  public final void setDRRT(RTManager drRT) {
+    this.drRT = drRT;
   }
 }

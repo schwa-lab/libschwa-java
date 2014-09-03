@@ -11,6 +11,12 @@ import org.schwa.dr.runtime.RTFieldSchema;
 import org.schwa.dr.runtime.RTStoreSchema;
 
 
+/**
+ * Internal helper class for {@link Reader}.
+ *
+ * @author Tim Dawborn
+ * @see Reader
+ **/
 final class ReaderHelper {
   private ReaderHelper() { }
 

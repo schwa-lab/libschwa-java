@@ -21,7 +21,15 @@ import org.schwa.dr.runtime.RTManager;
 import org.schwa.dr.runtime.RTStoreSchema;
 
 
+/**
+ * Reads in docrep documents of type T from the input stream provided in the constructor.
+ * This class implements the {@link Iterator} interface, providing an interator for that yields
+ * documents of type T.
+ *
+ * @author Tim Dawborn
+ **/
 public final class Reader <T extends Doc> implements Iterable<T>, Iterator<T> {
+  /** docrep wire protocol version that this reader knows how to read. **/
   public static final byte WIRE_VERSION = 3;
 
   private final ByteArrayInputStream in;
@@ -29,6 +37,17 @@ public final class Reader <T extends Doc> implements Iterable<T>, Iterator<T> {
   private final MessageUnpacker unpacker;
   private T doc;
 
+  /**
+   * Constructs a new docrep reader given the input stream and document schema.
+   *
+   * @param in The input stream to read from. This needs to be an input stream which has full
+   *           {@link java.io.InputStream#mark} support to implement lazy loading correctly. To
+   *           ensure this is the case, the input stream must currently be a
+   *           {@link ByteArrayInputStream}.
+   * @param docSchema The {@link DocSchema} instance to use for reading. Unlike the other docrep
+   *                  APIs, this argument cannot be optional as you cannot be the .class attribute
+   *                  of a generic type due to type erasure.
+   **/
   public Reader(ByteArrayInputStream in, DocSchema docSchema) {
     this.in = in;
     this.docSchema = docSchema;
@@ -36,16 +55,26 @@ public final class Reader <T extends Doc> implements Iterable<T>, Iterator<T> {
     readNext();
   }
 
+  /**
+   * Returns this same object as an {@link Iterator} to comply with the {@link Iterable} interface.
+   **/
   @Override  // Iterable<T>
   public Iterator<T> iterator() {
     return this;
   }
 
+  /**
+   * Returns whether or not the reader iterator has any more documents to read in from the input
+   * stream.
+   **/
   @Override  // Iterator<T>
   public boolean hasNext() {
     return doc != null;
   }
 
+  /**
+   * Reads the next document from the input stream and returns it.
+   **/
   @Override  // Iterator<T>
   public T next() {
     final T doc = this.doc;
@@ -53,6 +82,11 @@ public final class Reader <T extends Doc> implements Iterable<T>, Iterator<T> {
     return doc;
   }
 
+  /**
+   * This optional method from {@link Iterator} is unsupported.
+   *
+   * @throws UnsupportedOperationException
+   **/
   @Override  // Iterator<T>
   public void remove() {
     throw new UnsupportedOperationException();
@@ -92,7 +126,7 @@ public final class Reader <T extends Doc> implements Iterable<T>, Iterator<T> {
     // Construct the lazy runtime manager for the document.
     final RTManager rt = RTFactory.create();
     doc = (T) docSchema.getKlass().newInstance();
-    doc.setRT(rt);
+    doc.setDRRT(rt);
 
     // Map of each of the registered types.
     Map<String, AnnSchema> klassNameMap = new HashMap<String, AnnSchema>();

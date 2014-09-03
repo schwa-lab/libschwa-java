@@ -3,6 +3,11 @@ package org.schwa.dr;
 import java.lang.reflect.Field;
 
 
+/**
+ * Schema class for docrep stores.
+ *
+ * @author Tim Dawborn
+ **/
 public final class StoreSchema {
   private final Field field;
   private final String name;

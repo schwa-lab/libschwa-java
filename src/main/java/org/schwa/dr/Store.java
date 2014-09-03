@@ -7,13 +7,24 @@ import java.util.List;
 import java.util.ListIterator;
 
 
+/**
+ * Implementation of docrep stores; ordered collections of annotation instances. This class wraps
+ * an {@link ArrayList} while providing some additional methods, such as {@link Store#create}, and
+ * adding some additional docrep semantics to methods like {@link Store#add} and
+ * {@link Store#clear}.
+ *
+ * @author Tim Dawborn
+ **/
 public class Store<T extends Ann> implements List<T> {
-  private final List<T> items;
+  protected final List<T> items;
 
   public Store() {
     items = new ArrayList<T>();
   }
 
+  /**
+   * Adds a new {@link Ann} instance to the store, setting the drIndex attribute in the process.
+   **/
   @Override
   public boolean add(T obj) {
     if (obj.getDRIndex() != null)
@@ -22,11 +33,18 @@ public class Store<T extends Ann> implements List<T> {
     return items.add(obj);
   }
 
+  /**
+   * This method is unsupported but required by the {@link List} interface.
+   * @throws UnsupportedOperationException
+   **/
   @Override
   public void add(int index, T o) {
     throw new UnsupportedOperationException();
   }
 
+  /**
+   * @see Store#add(Ann)
+   **/
   @Override
   public boolean addAll(Collection<? extends T> c) {
     for (T obj : c)
@@ -37,11 +55,19 @@ public class Store<T extends Ann> implements List<T> {
     return items.addAll(c);
   }
 
+  /**
+   * @see Store#add(int, Ann)
+   * @throws UnsupportedOperationException
+   **/
   @Override
   public boolean addAll(int index, Collection<? extends T> c) {
     throw new UnsupportedOperationException();
   }
 
+  /**
+   * Removes all annotation instances from the store, setting their drIndex values to null in the
+   * process.
+   **/
   @Override
   public void clear() {
     for (T obj : items)
@@ -59,6 +85,11 @@ public class Store<T extends Ann> implements List<T> {
     return items.containsAll(c);
   }
 
+  /**
+   * Creates a new annotation instance, adds it to the store, and returns the instance. This is
+   * simply a convenience method to save the user from creating and adding to the store
+   * separately.
+   **/
   public T create(final Class<T> klass) {
     T obj;
     try {
@@ -74,6 +105,11 @@ public class Store<T extends Ann> implements List<T> {
     return obj;
   }
 
+  /**
+   * Creates n new annotation instances, adding them all to the store.
+   *
+   * @see Store#create(Class)
+   **/
   public void create(final Class<T> klass, final int n) {
     for (int i = 0; i != n; i++)
       create(klass);
@@ -124,26 +160,46 @@ public class Store<T extends Ann> implements List<T> {
     return items.listIterator(index);
   }
 
+  /**
+   * This method is unsupported but required by the {@link List} interface.
+   * @throws UnsupportedOperationException
+   **/
   @Override
   public T remove(int index) {
     throw new UnsupportedOperationException();
   }
 
+  /**
+   * This method is unsupported but required by the {@link List} interface.
+   * @throws UnsupportedOperationException
+   **/
   @Override
   public boolean remove(Object o) {
     throw new UnsupportedOperationException();
   }
 
+  /**
+   * This method is unsupported but required by the {@link List} interface.
+   * @throws UnsupportedOperationException
+   **/
   @Override
   public boolean removeAll(Collection<?> c) {
     throw new UnsupportedOperationException();
   }
 
+  /**
+   * This method is unsupported but required by the {@link List} interface.
+   * @throws UnsupportedOperationException
+   **/
   @Override
   public boolean retainAll(Collection<?> c) {
     throw new UnsupportedOperationException();
   }
 
+  /**
+   * This method is unsupported but required by the {@link List} interface.
+   * @throws UnsupportedOperationException
+   **/
   @Override
   public T set(int index, T o) {
     throw new UnsupportedOperationException();
@@ -154,6 +210,10 @@ public class Store<T extends Ann> implements List<T> {
     return items.size();
   }
 
+  /**
+   * This method is unsupported but required by the {@link List} interface.
+   * @throws UnsupportedOperationException
+   **/
   @Override
   public List<T> subList(int fromIndex, int toIndex) {
     throw new UnsupportedOperationException();

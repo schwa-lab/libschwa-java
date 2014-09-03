@@ -1,10 +1,19 @@
 package org.schwa.dr;
 
 
+/**
+ * Abstract base class for the {@link Ann} interface.
+ *
+ * @author Tim Dawborn
+ **/
 public abstract class AbstractAnn implements Ann {
-  private byte[] lazy;
-  private int lazyNElem;
-  private Integer drIndex;
+  /** The index of this annotation instance within a {@link Store}. **/
+  protected Integer drIndex;
+  /** The lazy serialised data for this annotation instance. **/
+  protected byte[] drLazy;
+  /** The number of fields that are lazily stored for this annotation instance. **/
+  protected int drLazyNElem;
+
 
   protected AbstractAnn() { }
 
@@ -16,10 +25,10 @@ public abstract class AbstractAnn implements Ann {
       return false;
     else if (!(o instanceof AbstractAnn))
       return false;
-    final AbstractAnn a = (AbstractAnn) o;
-    if (drIndex == null || a.drIndex == null)
+    final AbstractAnn other = (AbstractAnn) o;
+    if (this.drIndex == null || other.drIndex == null)
       return false;
-    return drIndex == a.drIndex;
+    return this.drIndex == other.drIndex;
   }
 
   @Override
@@ -29,12 +38,12 @@ public abstract class AbstractAnn implements Ann {
 
   @Override
   public final byte[] getDRLazy() {
-    return lazy;
+    return drLazy;
   }
 
   @Override
   public final int getDRLazyNElem() {
-    return lazyNElem;
+    return drLazyNElem;
   }
 
   @Override
@@ -43,12 +52,12 @@ public abstract class AbstractAnn implements Ann {
   }
 
   @Override
-  public final void setDRLazy(byte[] lazy) {
-    this.lazy = lazy;
+  public final void setDRLazy(byte[] drLazy) {
+    this.drLazy = drLazy;
   }
 
   @Override
-  public final void setDRLazyNElem(int lazyNElem) {
-    this.lazyNElem = lazyNElem;
+  public final void setDRLazyNElem(int drLazyNElem) {
+    this.drLazyNElem = drLazyNElem;
   }
 }

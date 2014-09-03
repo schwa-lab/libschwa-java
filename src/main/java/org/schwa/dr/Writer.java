@@ -16,22 +16,39 @@ import org.schwa.dr.runtime.RTManager;
 import org.schwa.dr.runtime.RTStoreSchema;
 
 
+/**
+ * Writes out docrep documents to the output stream provided in the constructor.
+ *
+ * @author Tim Dawborn
+ **/
 public final class Writer {
+  /** docrep wire protocol version that this writer knows how to write. **/
   public static final byte WIRE_VERSION = 3;
 
   private final OutputStream out;
   private final DocSchema docSchema;
   private final MessagePacker packer;
 
+  /**
+   * Constructs a new docrep writer given the output stream and document schema.
+   *
+   * @param out The output stream to write to.
+   * @param docSchema The {@link DocSchema} instance to use for writing. Unlike the other docrep
+   *                  APIs, this argument cannot be optional as you cannot be the .class attribute
+   *                  of a generic type due to type erasure.
+   **/
   public Writer(OutputStream out, DocSchema docSchema) {
     this.out = out;
     this.docSchema = docSchema;
     this.packer = MessagePackFactory.newDefaultPacker(out);
   }
 
+  /**
+   * Serialises a docrep document to the wrapped output stream.
+   **/
   public void write(final Doc doc) throws IOException {
     // Ger or construct the RTManager for the document.
-    final RTManager rt = RTFactory.buildOrMerge(doc.getRT(), docSchema);
+    final RTManager rt = RTFactory.buildOrMerge(doc.getDRRT(), docSchema);
     final RTAnnSchema rtDocSchema = rt.getDocSchema();
 
     // <wire_version>
@@ -44,21 +61,19 @@ public final class Writer {
     writeStoresHeader(rtDocSchema.getStores(), doc);
 
     // <doc_instance> ::= <instances_nbytes> <instance>
-    {
-      if (rtDocSchema.isLazy()) {
-        final byte[] lazyData = rtDocSchema.getLazyData();
-        packer.packInt(lazyData.length);
-        packer.flush();
-        out.write(lazyData);
-      }
-      else {
-        final ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        final DataOutputStream dos = new DataOutputStream(bos);
-        writeInstance(doc, rtDocSchema, doc, dos);
-        packer.packInt(bos.size());
-        packer.flush();
-        bos.writeTo(out);
-      }
+    if (rtDocSchema.isLazy()) {
+      final byte[] lazyData = rtDocSchema.getLazyData();
+      packer.packInt(lazyData.length);
+      packer.flush();
+      out.write(lazyData);
+    }
+    else {
+      final ByteArrayOutputStream bos = new ByteArrayOutputStream();
+      final DataOutputStream dos = new DataOutputStream(bos);
+      writeInstance(doc, rtDocSchema, doc, dos);
+      packer.packInt(bos.size());
+      packer.flush();
+      bos.writeTo(out);
     }
 
     // <instances_groups> ::= <instances_group>*
