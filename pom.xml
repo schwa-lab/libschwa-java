@@ -7,7 +7,27 @@
   <packaging>jar</packaging>
 
   <name>Schwa Lab Tools</name>
-  <url>http://schwa.org/projects/schwa</url>
+  <description>Java port of a subset of libschwa. This is currently only docrep.</description>
+  <url>https://github.com/schwa-lab/libschwa-java</url>
+  <licenses>
+    <license>
+      <name>MIT License</name>
+      <url>http://www.opensource.org/licenses/mit-license.php</url>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <name>Tim Dawborn</name>
+      <organization>Schwa Lab</organization>
+      <organizationUrl>https://github.com/timdawborn</organizationUrl>
+    </developer>
+  </developers>
+  <scm>
+    <connection>scm:git:git@github.com:schwa-lab/libschwa-java.git</connection>
+    <developerConnection>scm:git:git@github.com:schwa-lab/libschwa-java.git</developerConnection>
+    <url>git@github.com:schwa-lab/libschwa-java.git</url>
+  </scm>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
